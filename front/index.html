@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Barra superior con logo y nombre del negocio -->
+    <header class="barra-superior">
+        <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
+        <span id="nombre-negocio" class="nombre-negocio"></span>
+    </header>
+
+    <main class="layout">
+        <!-- Panel de recomendaciones (3 de 12 columnas, alto completo) -->
+        <aside class="panel-recomendaciones">
+            <div class="recomendaciones-cabecera">
+                <span class="recomendaciones-icono">✨</span>
+                <div>
+                    <h2 class="recomendaciones-titulo">Sugerencias para ti</h2>
+                    <p class="recomendaciones-subtitulo">Sugerencias pensadas para ti</p>
+                </div>
+            </div>
+            <div id="recomendaciones" class="recomendaciones-lista" aria-live="polite"></div>
+        </aside>
+
+        <!-- Cartas de productos (resto del ancho) -->
+        <section class="panel-productos">
+            <h1 class="panel-titulo">Lo más vendido</h1>
+            <div id="contenedor-cartas" class="grid-cartas"></div>
+        </section>
+    </main>
+
+    <!-- Ventana emergente: por qué se recomienda -->
+    <div id="modal" class="modal" hidden>
+        <div class="modal-fondo" data-cerrar></div>
+        <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+            <button class="modal-cerrar" type="button" aria-label="Cerrar" data-cerrar>&times;</button>
+            <img id="modal-imagen" class="modal-imagen" alt="">
+            <div class="modal-cuerpo">
+                <h3 id="modal-titulo" class="modal-titulo"></h3>
+                <span id="modal-precio" class="modal-precio"></span>
+                <p class="modal-etiqueta">¿Por qué te lo recomendamos?</p>
+                <p id="modal-razon" class="modal-razon"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/productos.js"></script>
+    <script src="js/cartas.js"></script>
+    <script src="js/recomendaciones.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

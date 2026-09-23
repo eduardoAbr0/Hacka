@@ -1,0 +1,369 @@
+:root {
+    --columnas-texto: 3;          /* columnas que ocupa el panel de recomendaciones (de 12) */
+    --alto-barra: 72px;
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --texto: #1f2328;
+    --texto-suave: #4b5563;       /* más oscuro para leer mejor */
+    --borde: #e3e7ec;
+    --acento: #2563eb;
+    --acento-2: #7c3aed;
+    --acento-suave: #eef3ff;
+    --radio: 14px;
+    --espacio: 16px;
+    --sombra: 0 1px 3px rgba(16, 24, 40, .06), 0 4px 12px rgba(16, 24, 40, .04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+/* Tamaño base de letra: todo lo que usa rem crece con este valor */
+html { font-size: 112.5%; }  /* 18px */
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+}
+
+body.sin-scroll { overflow: hidden; }
+
+/* ---------- Barra superior ---------- */
+.barra-superior {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: var(--alto-barra);
+    padding: 0 24px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--borde);
+    box-shadow: var(--sombra);
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.nombre-negocio {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+
+/* ---------- Layout: 12 columnas ---------- */
+.layout {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--espacio);
+    height: calc(100vh - var(--alto-barra));
+    padding: var(--espacio);
+}
+
+.panel-productos {
+    grid-column: span calc(12 - var(--columnas-texto));
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.panel-titulo {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* ---------- Panel de recomendaciones ---------- */
+.panel-recomendaciones {
+    grid-column: span var(--columnas-texto);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+}
+
+.recomendaciones-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--acento), var(--acento-2));
+}
+
+.recomendaciones-icono {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    font-size: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .2);
+}
+
+.recomendaciones-titulo { font-size: 1.45rem; font-weight: 800; }
+.recomendaciones-subtitulo { font-size: .95rem; opacity: .9; }
+
+.recomendaciones-lista {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.5;
+    background: linear-gradient(180deg, #fafbff, #ffffff);
+}
+
+.recomendacion {
+    padding: 12px 14px;
+    background: var(--acento-suave);
+    border-left: 4px solid var(--acento);
+    border-radius: 4px 12px 12px 4px;
+    animation: aparecer .25s ease;
+}
+
+.recomendacion-titulo {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 800;
+    color: var(--acento);
+}
+
+/* Sugerencia con producto (clic abre el modal) */
+.recomendacion-producto {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.recomendacion-producto:hover {
+    transform: translateX(3px);
+    box-shadow: var(--sombra);
+}
+
+.recomendacion-imagen {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.recomendacion-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.recomendacion-producto .recomendacion-titulo { margin-bottom: 0; }
+.recomendacion-precio { font-weight: 800; color: var(--texto); }
+.recomendacion-motivo { font-size: .95rem; font-weight: 600; color: var(--texto-suave); }
+
+.aviso { font-size: 1.15rem; font-weight: 600; color: var(--texto-suave); }
+
+@keyframes aparecer {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Cartas: cuadrícula 2 x 2 que llena el panel ---------- */
+.grid-cartas {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.carta {
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    overflow: hidden;
+    box-shadow: var(--sombra);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.carta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(16, 24, 40, .10);
+}
+
+.carta-imagen {
+    flex: 1;
+    min-height: 120px;
+    width: 100%;
+    object-fit: cover;
+    background: #e9ecef;
+}
+
+.carta-cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 20px 18px;
+}
+
+.carta-nombre { font-size: 1.6rem; font-weight: 800; }
+.carta-descripcion { font-size: 1.15rem; font-weight: 600; color: var(--texto-suave); }
+
+.carta-pie {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.carta-precio { font-size: 1.5rem; font-weight: 800; color: var(--acento); }
+
+.carta-boton {
+    padding: 10px 22px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    background: var(--acento);
+    color: #fff;
+    cursor: pointer;
+}
+
+.carta-boton:hover { filter: brightness(1.1); }
+
+/* ---------- Ventana emergente (modal) ---------- */
+.modal[hidden] { display: none; }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: var(--espacio);
+}
+
+.modal-fondo {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(2px);
+    animation: fundido .2s ease;
+}
+
+.modal-caja {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(900px, 100%);
+    min-height: min(480px, 90vh);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
+    animation: entrar .22s ease;
+}
+
+.modal-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+    line-height: 1;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .9);
+    color: var(--texto);
+    cursor: pointer;
+    box-shadow: var(--sombra);
+}
+
+.modal-cerrar:hover { background: #fff; }
+
+.modal-imagen {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 240px;
+    object-fit: cover;
+    background: #e9ecef;
+}
+
+.modal-cuerpo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 36px;
+}
+
+.modal-titulo { font-size: 1.9rem; }
+.modal-precio { font-weight: 700; color: var(--acento); font-size: 1.5rem; }
+
+.modal-etiqueta {
+    margin-top: 16px;
+    font-size: .9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--acento-2);
+}
+
+.modal-razon {
+    padding: 18px 20px;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    background: var(--acento-suave);
+    border-left: 4px solid var(--acento-2);
+    border-radius: 6px 12px 12px 6px;
+}
+
+@keyframes fundido { from { opacity: 0; } }
+@keyframes entrar  { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+
+/* ---------- Responsive: en móvil se apilan ---------- */
+@media (max-width: 768px) {
+    .layout { height: auto; grid-template-columns: 1fr; }
+    .panel-recomendaciones,
+    .panel-productos { grid-column: 1 / -1; }
+    .panel-recomendaciones { min-height: 40vh; }
+    .nombre-negocio { font-size: 1.1rem; }
+
+    .grid-cartas { grid-template-columns: 1fr; grid-template-rows: none; }
+    .carta-imagen { flex: none; aspect-ratio: 4 / 3; }
+
+    .modal-caja { grid-template-columns: 1fr; min-height: 0; }
+    .modal-imagen { height: auto; aspect-ratio: 16 / 9; min-height: 0; }
+    .modal-cuerpo { padding: 24px; }
+    .modal-titulo { font-size: 1.5rem; }
+}
