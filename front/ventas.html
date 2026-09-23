@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi carrito</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/ventas.css">
+</head>
+<body>
+    <!-- Barra superior con logo y nombre del negocio -->
+    <header class="barra-superior">
+        <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
+        <span id="nombre-negocio" class="nombre-negocio"></span>
+        <nav class="nav">
+            <a href="index.html" class="nav-link">Productos</a>
+            <a href="ventas.html" class="nav-link activo">Mi carrito</a>
+        </nav>
+    </header>
+
+    <main class="ventas-layout">
+        <!-- Izquierda: lista de compras con scroll + botones -->
+        <section class="ventas-panel">
+            <div class="ventas-cabecera">
+                <h1 class="ventas-titulo">Mi carrito</h1>
+                <span id="conteo-productos" class="ventas-conteo"></span>
+            </div>
+
+            <p class="aviso-escanear">
+                <span class="aviso-icono">📷</span>
+                Para agregar tus compras, escanea el código de barras con la cámara
+            </p>
+
+            <ul id="lista-compras" class="lista-compras"></ul>
+
+            <div class="ventas-acciones">
+                <button id="btn-eliminar" class="btn btn-peligro" type="button" disabled>Cancelar</button>
+            </div>
+        </section>
+
+        <!-- Derecha: total y pago -->
+        <aside class="resumen">
+            <h2 class="resumen-titulo">Resumen</h2>
+            <div class="resumen-fila">
+                <span>Productos</span>
+                <span id="resumen-cantidad">0</span>
+            </div>
+            <div class="resumen-total">
+                <span class="resumen-total-etiqueta">Total</span>
+                <span id="resumen-total" class="resumen-total-valor">$0.00</span>
+            </div>
+            <button id="btn-pagar" class="btn btn-pagar" type="button">Pagar</button>
+            <button id="btn-cancelar" class="btn btn-cancelar" type="button">Cancelar</button>
+        </aside>
+    </main>
+
+
+    <!-- Diálogo: confirmar / avisos -->
+    <div id="dialogo-mensaje" class="dialogo" hidden>
+        <div class="dialogo-fondo" data-cerrar></div>
+        <div class="dialogo-caja dialogo-chico" role="dialog" aria-modal="true" aria-labelledby="mensaje-titulo">
+            <div id="mensaje-icono" class="dialogo-icono"></div>
+            <h3 id="mensaje-titulo" class="dialogo-titulo"></h3>
+            <p id="mensaje-texto" class="dialogo-texto"></p>
+            <div class="dialogo-botones">
+                <button id="mensaje-no" class="btn btn-secundario" type="button" data-cerrar>No</button>
+                <button id="mensaje-si" class="btn btn-primario" type="button">Sí</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/productos.js"></script>
+    <script src="js/dialogo.js"></script>
+    <script src="js/ventas.js"></script>
+</body>
+</html>
