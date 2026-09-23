@@ -82,7 +82,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # 1. Tabla de Clientes
+            # 1. Tabla de Clientes (con foto_blob en la nube)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS clientes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,9 +90,15 @@ class DatabaseManager:
                     nombre TEXT NOT NULL,
                     encoding BLOB NOT NULL,
                     foto_path TEXT,
+                    foto_blob BLOB,
                     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # Migración: asegurar que la columna foto_blob exista si la tabla ya fue creada
+            try:
+                cursor.execute("ALTER TABLE clientes ADD COLUMN foto_blob BLOB")
+            except Exception:
+                pass
 
             # 2. Tabla de Productos (códigos de barra y soporte API)
             cursor.execute("""
@@ -144,24 +150,36 @@ class DatabaseManager:
             next_id = 1 if row is None else row[0] + 1
             return f"CLI-{next_id:04d}"
 
-    def registrar_cliente(self, codigo, nombre, encoding_np, foto_path):
+    def registrar_cliente(self, codigo, nombre, encoding_np, foto_path, foto_blob=None):
+        """Registra un cliente guardando el vector y la foto_blob directamente en la base de datos."""
         encoding_bytes = encoding_np.astype(np.float64).tobytes()
+        if foto_blob is None and foto_path and os.path.exists(foto_path):
+            try:
+                with open(foto_path, "rb") as f:
+                    foto_blob = f.read()
+            except Exception:
+                foto_blob = None
+
         ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO clientes (codigo, nombre, encoding, foto_path, fecha_registro)
-                VALUES (?, ?, ?, ?, ?)
-            """, (codigo, nombre, encoding_bytes, foto_path, ahora))
+                INSERT INTO clientes (codigo, nombre, encoding, foto_path, foto_blob, fecha_registro)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (codigo, nombre, encoding_bytes, foto_path, foto_blob, ahora))
             return cursor.lastrowid
 
-    def cargar_clientes(self):
-        """Carga clientes en memoria con estadísticas de compras."""
+    def cargar_clientes(self, restaurar_fotos_localmente=True):
+        """Carga clientes en memoria con estadísticas de compras y restaura fotos locales si no existen."""
         clientes = []
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        faces_dir = os.path.join(base_dir, "data", "clientes")
+        os.makedirs(faces_dir, exist_ok=True)
+
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT c.id, c.codigo, c.nombre, c.encoding, c.foto_path, c.fecha_registro,
+                SELECT c.id, c.codigo, c.nombre, c.encoding, c.foto_path, c.foto_blob, c.fecha_registro,
                        COUNT(v.id) AS num_compras,
                        COALESCE(SUM(v.total), 0.0) AS total_gastado
                 FROM clientes c
@@ -169,14 +187,24 @@ class DatabaseManager:
                 GROUP BY c.id
             """)
             for row in cursor.fetchall():
-                c_id, codigo, nombre, enc_bytes, foto_path, fecha_reg, num_compras, total_gastado = row
+                c_id, codigo, nombre, enc_bytes, foto_path, foto_blob, fecha_reg, num_compras, total_gastado = row
                 encoding_np = np.frombuffer(enc_bytes, dtype=np.float64)
+
+                foto_local = foto_path or os.path.join(faces_dir, f"{codigo}.jpg")
+                if restaurar_fotos_localmente and foto_blob and not os.path.exists(foto_local):
+                    try:
+                        with open(foto_local, "wb") as f:
+                            f.write(foto_blob)
+                    except Exception as e:
+                        print(f"[Aviso] No se pudo restaurar foto de {codigo} localmente: {e}")
+
                 clientes.append({
                     "id": c_id,
                     "codigo": codigo,
                     "nombre": nombre,
                     "encoding": encoding_np,
-                    "foto_path": foto_path,
+                    "foto_path": foto_local,
+                    "tiene_foto_cloud": foto_blob is not None,
                     "fecha_registro": fecha_reg,
                     "total_compras": num_compras,
                     "total_gastado": float(total_gastado)

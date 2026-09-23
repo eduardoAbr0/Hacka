@@ -196,7 +196,11 @@ class FaceService:
         
         cv2.imwrite(foto_path, face_img)
         
-        c_id = self.db.registrar_cliente(codigo, nombre, encoding, foto_path)
+        # Codificar en memoria para guardar el binario directo en SQLite Cloud
+        success, buffer = cv2.imencode(".jpg", face_img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        foto_blob = buffer.tobytes() if success else None
+
+        c_id = self.db.registrar_cliente(codigo, nombre, encoding, foto_path, foto_blob=foto_blob)
         
         nuevo_cliente = {
             "id": c_id,
