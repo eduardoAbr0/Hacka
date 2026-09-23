@@ -138,9 +138,30 @@ def menu():
 
         elif opc == "7":
             print("\n" + "=" * 65)
-            print("   DATASETS FORMATEADOS PARA MACHINE LEARNING")
+            print("   MACHINE LEARNING (SCIKIT-LEARN): RECOMENDADOR Y DATASETS")
             print("=" * 65)
-            print("\n1. MATRIZ CLIENTE-PRODUCTO (Para Filtrado Colaborativo):")
+            
+            try:
+                from ml_recommender import RecomendadorProductos
+                rec = RecomendadorProductos(db=db)
+                print("\n--> Entrenando modelo de Scikit-Learn con ventas actuales...")
+                exito = rec.entrenar_modelo()
+                
+                if exito:
+                    c_id_in = input("\nIngrese el ID de cliente para probar sugerencias (o ENTER para ID 1): ").strip()
+                    c_id = int(c_id_in) if c_id_in.isdigit() else 1
+                    sugerencias = rec.obtener_recomendaciones(cliente_id=c_id, top_n=3)
+                    
+                    print(f"\nSugerencias generadas para Cliente ID {c_id}:")
+                    print("-" * 75)
+                    for i, s in enumerate(sugerencias, 1):
+                        print(f"  {i}. {s['nombre']} (${s['precio']:.2f})")
+                        print(f"     Motivo: {s['motivo']} | Score: {s['score']}")
+                    print("-" * 75)
+            except Exception as e:
+                print(f"[!] Aviso al probar ML: {e}")
+
+            print("\nMATRIZ DE COMPRAS Y DATASET:")
             ds = db.obtener_dataset_cliente_producto()
             if not ds:
                 print("   (Aun no hay ventas registradas para generar la matriz)")
@@ -151,15 +172,6 @@ def menu():
                 for r in ds:
                     gasto_txt = f"${r['gasto_total']:.2f}"
                     print(f"   {r['cliente_nombre'][:18]:<20} {r['producto_nombre'][:26]:<28} {r['categoria']:<12} {r['frecuencia']:<6} {gasto_txt:<10}")
-
-            print("\n2. CANASTAS DE COMPRA (Para Reglas de Asociacion Apriori / Market Basket):")
-            canastas = db.obtener_canastas_compras()
-            if not canastas:
-                print("   (Aun no hay canastas de compra registradas)")
-            else:
-                print(f"   Total de tickets: {len(canastas)}")
-                for i, c in enumerate(canastas, 1):
-                    print(f"   Ticket #{i}: {', '.join(c)}")
 
         elif opc == "8":
             stats = db.contar_estadisticas()
