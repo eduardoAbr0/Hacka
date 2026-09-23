@@ -30,6 +30,9 @@ class DatabaseManager:
         if self.cloud_url and SQLITE_CLOUD_AVAILABLE:
             print(f"[DB] Conectado a SQLite Cloud en la nube.")
         else:
+            if self.cloud_url:
+                print("[DB] [AVISO] Hay URL de SQLite Cloud configurada, pero el modulo 'sqlitecloud' "
+                      "no esta instalado en este Python. Instalalo con: python -m pip install sqlitecloud")
             print(f"[DB] Usando base de datos local SQLite: {self.db_path}")
 
         self.init_db()
@@ -145,10 +148,16 @@ class DatabaseManager:
     def generar_siguiente_codigo(self):
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM clientes ORDER BY id DESC LIMIT 1")
+            # Basado en el mayor número de código existente (los ids no siempre coinciden con los códigos)
+            cursor.execute("""
+                SELECT MAX(CAST(SUBSTR(codigo, 5) AS INTEGER)), MAX(id)
+                FROM clientes WHERE codigo LIKE 'CLI-%'
+            """)
             row = cursor.fetchone()
-            next_id = 1 if row is None else row[0] + 1
-            return f"CLI-{next_id:04d}"
+            max_codigo = (row[0] or 0) if row else 0
+            max_id = (row[1] or 0) if row else 0
+            next_num = max(max_codigo, max_id) + 1
+            return f"CLI-{next_num:04d}"
 
     def registrar_cliente(self, codigo, nombre, encoding_np, foto_path, foto_blob=None):
         """Registra un cliente guardando el vector y la foto_blob directamente en la base de datos."""
@@ -190,7 +199,8 @@ class DatabaseManager:
                 c_id, codigo, nombre, enc_bytes, foto_path, foto_blob, fecha_reg, num_compras, total_gastado = row
                 encoding_np = np.frombuffer(enc_bytes, dtype=np.float64)
 
-                foto_local = foto_path or os.path.join(faces_dir, f"{codigo}.jpg")
+                # Siempre usar la carpeta local: foto_path puede venir de otra computadora
+                foto_local = os.path.join(faces_dir, f"{codigo}.jpg")
                 if restaurar_fotos_localmente and foto_blob and not os.path.exists(foto_local):
                     try:
                         with open(foto_local, "wb") as f:
