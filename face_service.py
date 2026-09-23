@@ -1,14 +1,35 @@
 import os
 import time
+import json
+import urllib.request
+import threading
 import cv2
 import numpy as np
 import face_recognition
 from db_manager import DatabaseManager
 
+def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, api_url="http://127.0.0.1:8000/api/camara/evento"):
+    """Envía una notificación asíncrona a la API Web para sincronizar el estado de la pantalla."""
+    def _envio():
+        try:
+            payload = json.dumps({
+                "estado": estado,
+                "cliente_id": cliente_id,
+                "codigo": codigo,
+                "mensaje": mensaje or "¡Hola de nuevo! 👋"
+            }).encode('utf-8')
+            req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
+            urllib.request.urlopen(req, timeout=1.0)
+        except Exception:
+            pass
+
+    threading.Thread(target=_envio, daemon=True).start()
+
+
 class FaceService:
     def __init__(self, tolerance=0.52, greeting_cooldown=60, min_confirm_frames=5):
         self.tolerance = tolerance
-        self.greeting_cooldown = greeting_cooldown  # Segundos antes de mostrar bienvenida de nuevo al mismo cliente
+        self.greeting_cooldown = greeting_cooldown
         self.min_confirm_frames = min_confirm_frames
         
         self.db = DatabaseManager()
@@ -17,19 +38,16 @@ class FaceService:
         self.faces_dir = os.path.join(base_dir, "data", "clientes")
         os.makedirs(self.faces_dir, exist_ok=True)
         
-        # Encodings y metadatos en memoria
         self.known_face_encodings = []
         self.known_face_metadata = []
         
-        # Registro de tiempos del último saludo {cliente_id: timestamp_float}
         self.last_greeting_time = {}
-        
-        # Buffer para auto-registro de desconocidos
         self.unknown_candidates = []
         
-        # Banners visuales
         self.active_banner = None
         self.recent_events = []
+
+        self.last_face_seen_time = 0
         
         self.recargar_clientes()
 
@@ -54,10 +72,6 @@ class FaceService:
             self.recent_events.pop(0)
 
     def procesar_frame(self, frame, process_detection=True):
-        """
-        Procesa el frame de video.
-        Retorna la lista de rostros detectados con sus datos y estado.
-        """
         now = time.time()
         
         small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -73,6 +87,9 @@ class FaceService:
         
         results = []
         current_frame_matched_unknowns = []
+
+        if face_locations:
+            self.last_face_seen_time = now
 
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             orig_top = top * 4
@@ -101,9 +118,10 @@ class FaceService:
                     matched_client["total_gastado"] = resumen["total_gastado"]
                     self.last_greeting_time[c_id] = now
                     
-                    compras_txt = f" - Compras: {resumen['total_compras']}" if resumen['total_compras'] > 0 else " - ¡Bienvenido!"
-                    self.set_banner(f"Cliente: {matched_client['nombre']} ({matched_client['codigo']}){compras_txt}", 
-                                    duration=3.5, banner_type="info")
+                    self.set_banner(f"¡Hola de nuevo! Cliente {matched_client['codigo']}", duration=3.5, banner_type="info")
+
+                # Notificar a la web que el cliente está activo frente a la pantalla
+                notificar_evento_web("activo", cliente_id=c_id, codigo=matched_client["codigo"], mensaje="¡Hola de nuevo! 👋")
                 
                 results.append({
                     "status": "known",
@@ -127,6 +145,7 @@ class FaceService:
                     if cand["frames"] >= self.min_confirm_frames:
                         nuevo_cliente = self._auto_registrar_cliente(frame, box, face_encoding)
                         self.unknown_candidates.pop(cand_idx)
+                        notificar_evento_web("activo", cliente_id=nuevo_cliente["id"], codigo=nuevo_cliente["codigo"], mensaje="¡Bienvenido! 👋")
                         results.append({
                             "status": "registered_now",
                             "box": box,
@@ -135,6 +154,7 @@ class FaceService:
                             "progress": 1.0
                         })
                     else:
+                        notificar_evento_web("registrando", mensaje="¡Bienvenido! Identificando cliente...")
                         results.append({
                             "status": "registering",
                             "box": box,
@@ -153,6 +173,7 @@ class FaceService:
                     cand_idx = len(self.unknown_candidates) - 1
                     current_frame_matched_unknowns.append(cand_idx)
                     
+                    notificar_evento_web("registrando", mensaje="¡Bienvenido! Identificando cliente...")
                     results.append({
                         "status": "registering",
                         "box": box,
@@ -165,6 +186,10 @@ class FaceService:
             c for idx, c in enumerate(self.unknown_candidates)
             if (now - c["last_seen"] < 1.5) or (idx in current_frame_matched_unknowns)
         ]
+
+        # Si no hay rostros detectados por más de 3 segundos, notificar estado idle a la web
+        if not face_locations and (now - self.last_face_seen_time > 3.0):
+            notificar_evento_web("idle", mensaje="Esperando cliente...")
 
         return results
 
@@ -196,7 +221,6 @@ class FaceService:
         
         cv2.imwrite(foto_path, face_img)
         
-        # Codificar en memoria para guardar el binario directo en SQLite Cloud
         success, buffer = cv2.imencode(".jpg", face_img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
         foto_blob = buffer.tobytes() if success else None
 
@@ -217,6 +241,6 @@ class FaceService:
         self.known_face_metadata.append(nuevo_cliente)
         self.last_greeting_time[c_id] = time.time()
         
-        self.set_banner(f"NUEVO CLIENTE REGISTRADO: {nombre} ({codigo})", duration=4.0, banner_type="success")
+        self.set_banner(f"¡Bienvenido! Cliente {codigo}", duration=4.0, banner_type="success")
         print(f"[FaceService] Auto-registrado exitosamente: {codigo} (ID: {c_id})")
         return nuevo_cliente

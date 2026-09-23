@@ -1,12 +1,7 @@
-"""
-API web del módulo de recomendaciones (ver guia_desarrollador_web.md).
-
-Ejecutar:
-    python -m uvicorn api_web:app --reload
-Luego abrir:
-    http://127.0.0.1:8000/?cliente=1
-"""
 import os
+import time
+from typing import Optional
+from pydantic import BaseModel
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,24 +14,55 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="Tienda - Recomendaciones")
 recomendador = RecomendadorProductos()
 
-# Permite abrir front/index.html desde otro servidor (Live Server, file://, etc.)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
+# Permite abrir el frontend desde cualquier servidor o puerto
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+# Estado global del escáner de cámara en tiempo real
+ESTADO_CAMARA = {
+    "estado": "idle",            # "idle", "registrando", "activo"
+    "cliente_id": None,
+    "codigo": None,
+    "mensaje": "Acércate a la cámara para ver tus sugerencias",
+    "last_updated": time.time()
+}
+
+class EventoCamara(BaseModel):
+    estado: str
+    cliente_id: Optional[int] = None
+    codigo: Optional[str] = None
+    mensaje: Optional[str] = None
+
+@app.post("/api/camara/evento")
+def recibir_evento_camara(evento: EventoCamara):
+    global ESTADO_CAMARA
+    ESTADO_CAMARA["estado"] = evento.estado
+    ESTADO_CAMARA["cliente_id"] = evento.cliente_id
+    ESTADO_CAMARA["codigo"] = evento.codigo
+    ESTADO_CAMARA["mensaje"] = evento.mensaje or "¡Hola de nuevo! 👋"
+    ESTADO_CAMARA["last_updated"] = time.time()
+    return {"status": "ok"}
+
+@app.get("/api/camara/estado")
+def obtener_estado_camara():
+    # Si han pasado más de 4 segundos sin señal de detección, volver automáticamente a 'idle'
+    if time.time() - ESTADO_CAMARA["last_updated"] > 4.0:
+        ESTADO_CAMARA["estado"] = "idle"
+        ESTADO_CAMARA["cliente_id"] = None
+        ESTADO_CAMARA["codigo"] = None
+        ESTADO_CAMARA["mensaje"] = "Acércate a la cámara para ver tus sugerencias"
+    return ESTADO_CAMARA
 
 @app.get("/api/recomendaciones/{cliente_id}")
 def get_recomendaciones(cliente_id: int, limit: int = Query(3, ge=1, le=20)):
     datos = recomendador.obtener_recomendaciones(cliente_id=cliente_id, top_n=limit)
-    # Si el modelo no conoce al cliente (sin compras) devuelve populares: no son personales
     conocido = cliente_id in getattr(recomendador, "user_to_idx", {})
     for r in datos:
         r["personalizado"] = conocido
     return datos
 
-
 @app.get("/api/populares")
 def get_populares(limit: int = Query(4, ge=1, le=20)):
     return recomendador._recomendar_mas_populares(top_n=limit, motivo="Es de los más vendidos de la tienda")
 
-
-# La web se sirve desde la misma dirección que la API
+# Servir archivos estáticos del frontend
 app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, "front"), html=True), name="front")
