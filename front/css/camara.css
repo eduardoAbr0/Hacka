@@ -1,0 +1,174 @@
+/* Estilos de la página "Cámara" (usa las variables de styles.css) */
+
+.camara-layout {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 20px;
+    height: calc(100vh - var(--alto-barra));
+    padding: 20px;
+}
+
+.visor,
+.galeria {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+}
+
+.visor   { grid-column: span 9; }
+.galeria { grid-column: span 3; }
+
+/* ---------- Visor ---------- */
+.visor-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--acento), var(--acento-2));
+}
+
+.visor-titulo { font-size: 1.5rem; font-weight: 800; }
+
+.estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    font-size: .95rem;
+    font-weight: 700;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .2);
+}
+
+.estado-punto {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f87171;
+}
+
+.estado.conectado .estado-punto {
+    background: #4ade80;
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, .3);
+}
+
+.visor-foto {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: #0f172a;
+}
+
+.visor-foto img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.visor-foto img[hidden] { display: none; }
+
+.visor-vacio {
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 2;
+    color: #94a3b8;
+}
+
+.visor-vacio[hidden] { display: none; }
+
+.visor-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--borde);
+}
+
+.foto-info { font-weight: 700; color: var(--texto-suave); }
+
+/* Aviso: cómo tomar una foto con el sensor */
+.aviso-sensor {
+    padding: 10px 16px;
+    font-weight: 700;
+    color: #92400e;
+    background: #fef3c7;
+    border: 2px dashed #f59e0b;
+    border-radius: 12px;
+}
+
+/* ---------- Galería ---------- */
+.galeria-titulo {
+    padding: 18px 20px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    border-bottom: 1px solid var(--borde);
+}
+
+.galeria-conteo { color: var(--texto-suave); font-weight: 700; }
+
+.galeria-lista {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    list-style: none;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.galeria-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 8px;
+    font: inherit;
+    text-align: left;
+    background: var(--panel);
+    border: 2px solid var(--borde);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.galeria-item:hover { border-color: #c7d2fe; }
+.galeria-item.activa { border-color: var(--acento); background: var(--acento-suave); }
+
+.galeria-miniatura {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #e9ecef;
+}
+
+.galeria-fecha { font-size: .9rem; font-weight: 700; color: var(--texto-suave); }
+
+.galeria-vacia {
+    padding: 30px 10px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--texto-suave);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .camara-layout { height: auto; grid-template-columns: 1fr; }
+    .visor, .galeria { grid-column: 1 / -1; }
+    .visor-foto { min-height: 50vh; }
+    .visor-cabecera, .visor-pie { flex-wrap: wrap; }
+    .galeria-lista { flex-direction: row; overflow-x: auto; }
+    .galeria-lista li { flex: 0 0 160px; }
+}

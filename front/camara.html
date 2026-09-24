@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cámara</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/camara.css">
+</head>
+<body>
+    <!-- Barra superior con logo y nombre del negocio -->
+    <header class="barra-superior">
+        <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
+        <span id="nombre-negocio" class="nombre-negocio"></span>
+        <nav class="nav">
+            <a href="index.html" class="nav-link">Productos</a>
+            <a href="ventas.html" class="nav-link">Mi carrito</a>
+            <a href="camara.html" class="nav-link activo">Cámara</a>
+        </nav>
+    </header>
+
+    <main class="camara-layout">
+        <!-- Izquierda: foto grande -->
+        <section class="visor">
+            <div class="visor-cabecera">
+                <h1 class="visor-titulo">Última foto</h1>
+                <span id="estado-esp32" class="estado desconectado">
+                    <span class="estado-punto"></span>
+                    <span id="estado-texto">Buscando la API…</span>
+                </span>
+            </div>
+
+            <div class="visor-foto">
+                <img id="foto-grande" alt="Foto tomada por el ESP32" hidden>
+                <p id="visor-vacio" class="visor-vacio">📷<br>Aún no hay fotos</p>
+            </div>
+
+            <div class="visor-pie">
+                <span id="foto-info" class="foto-info"></span>
+                <span class="aviso-sensor">📡 Acerca un objeto a menos de 20 cm del sensor para tomar una foto</span>
+            </div>
+        </section>
+
+        <!-- Derecha: galería de fotos anteriores -->
+        <aside class="galeria">
+            <h2 class="galeria-titulo">Fotos <span id="galeria-conteo" class="galeria-conteo"></span></h2>
+            <ul id="galeria-lista" class="galeria-lista"></ul>
+        </aside>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api-fotos.js"></script>
+    <script src="js/camara.js"></script>
+</body>
+</html>

@@ -1,13 +1,5 @@
 // Lógica de renderizado de las cartas de productos
 
-const IMAGEN_POR_DEFECTO =
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><rect width="4" height="3" fill="#e9ecef"/></svg>');
-
-function formatearPrecio(precio) {
-    return precio.toLocaleString("es-MX", { style: "currency", currency: "MXN" });
-}
-
 function crearCarta(producto) {
     const carta = document.createElement("article");
     carta.className = "carta";
