@@ -11,7 +11,7 @@
 const char* WIFI_SSID     = "Office_red";
 const char* WIFI_PASSWORD = "nexus_lab";
 // Endpoint que recibe la imagen (http:// o https://)
-const char* API_URL       = "http://10.32.0.28:3000/api/upload";
+const char* API_URL       = "http://10.32.0.56:3000/api/upload";
 // Nombre del campo del formulario que espera la API
 const char* API_CAMPO     = "file";
 // Token opcional (se envía como "Authorization: Bearer <token>"). Dejar "" si no aplica
