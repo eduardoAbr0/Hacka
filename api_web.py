@@ -40,13 +40,14 @@ ESTADO_CAMARA = {
     "estado": "idle",
     "cliente_id": None,
     "codigo": None,
+    "nombre": None,
     "mensaje": MENSAJE_ESPERA,
     "last_updated": time.time()
 }
 
 
 class EventoCamara(BaseModel):
-    estado: str
+    estado: str                         # "idle" | "registrando" | "activo" | "empleado" (trabajador)
     cliente_id: Optional[int] = None
     codigo: Optional[str] = None
     nombre: Optional[str] = None

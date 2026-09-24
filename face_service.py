@@ -10,12 +10,17 @@ from db_manager import DatabaseManager
 
 ULTIMO_EVENTO_ENVIADO = {"estado": None, "cliente_id": None, "time": 0}
 
-def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, api_url="http://127.0.0.1:8000/api/camara/evento"):
+# Un rostro sin coincidencia clara pero a esta distancia de un trabajador se toma como ese trabajador
+# (0.6 es el umbral estándar de face_recognition para "misma persona"; la tolerancia normal es 0.52)
+TOLERANCIA_TRABAJADOR = 0.6
+
+def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, nombre=None,
+                         api_url="http://127.0.0.1:8000/api/camara/evento"):
     """Envía una notificación asíncrona con control de tasa a la API Web."""
     now = time.time()
     # Evitar ráfagas duplicadas si el estado no ha cambiado y han pasado menos de 0.8s
-    if (ULTIMO_EVENTO_ENVIADO["estado"] == estado and 
-        ULTIMO_EVENTO_ENVIADO["cliente_id"] == cliente_id and 
+    if (ULTIMO_EVENTO_ENVIADO["estado"] == estado and
+        ULTIMO_EVENTO_ENVIADO["cliente_id"] == cliente_id and
         now - ULTIMO_EVENTO_ENVIADO["time"] < 0.8):
         return
 
@@ -29,6 +34,7 @@ def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, api
                 "estado": estado,
                 "cliente_id": cliente_id,
                 "codigo": codigo,
+                "nombre": nombre,
                 "mensaje": mensaje or "¡Hola de nuevo! 👋"
             }).encode('utf-8')
             req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
@@ -54,7 +60,7 @@ class FaceService:
         
         self.known_face_encodings = []
         self.known_face_metadata = []
-        
+
         self.last_greeting_time = {}
         self.unknown_candidates = []
         
@@ -70,7 +76,16 @@ class FaceService:
         clientes = self.db.cargar_clientes()
         self.known_face_encodings = [c["encoding"] for c in clientes]
         self.known_face_metadata = clientes
-        print(f"[FaceService] {len(clientes)} clientes cargados en memoria.")
+        trabajadores = sum(1 for c in clientes if c.get("es_trabajador"))
+        print(f"[FaceService] {len(clientes)} rostros cargados en memoria ({trabajadores} trabajadores).")
+
+    def _trabajador_parecido(self, face_distances):
+        """Trabajador más parecido dentro de TOLERANCIA_TRABAJADOR, o None."""
+        mejor, mejor_dist = None, TOLERANCIA_TRABAJADOR
+        for meta, dist in zip(self.known_face_metadata, face_distances):
+            if meta.get("es_trabajador") and dist <= mejor_dist:
+                mejor, mejor_dist = meta, float(dist)
+        return mejor
 
     def set_banner(self, text, duration=4.0, banner_type="success"):
         self.active_banner = {
@@ -111,7 +126,7 @@ class FaceService:
             orig_bottom = bottom * 4
             orig_left = left * 4
             box = (orig_top, orig_right, orig_bottom, orig_left)
-            
+
             matched_client = None
             min_dist = 1.0
 
@@ -122,8 +137,28 @@ class FaceService:
                 
                 if min_dist <= self.tolerance:
                     matched_client = self.known_face_metadata[best_match_index]
+                else:
+                    # Rostro sin coincidencia clara (entrando, de lado, movido): si se parece a un
+                    # trabajador se le trata como tal para no registrarlo como cliente nuevo
+                    matched_client = self._trabajador_parecido(face_distances)
 
-            if matched_client:
+            # Trabajador (clientes.es_trabajador = 1): la web le pide registrar su huella
+            if matched_client and matched_client.get("es_trabajador"):
+                c_id = matched_client["id"]
+                if now - self.last_greeting_time.get(c_id, 0) > self.greeting_cooldown:
+                    self.last_greeting_time[c_id] = now
+                    self.set_banner(f"Trabajador {matched_client['nombre']}: registra tu huella", duration=3.5, banner_type="info")
+                notificar_evento_web("empleado", cliente_id=c_id, codigo=matched_client["codigo"],
+                                     nombre=matched_client["nombre"], mensaje="Registra tu huella")
+                results.append({
+                    "status": "empleado",
+                    "box": box,
+                    "client": matched_client,
+                    "distance": min_dist,
+                    "progress": 1.0
+                })
+
+            elif matched_client:
                 c_id = matched_client["id"]
                 last_time = self.last_greeting_time.get(c_id, 0)
                 if now - last_time > self.greeting_cooldown:

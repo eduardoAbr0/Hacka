@@ -109,6 +109,12 @@ class DatabaseManager:
                 cursor.execute("ALTER TABLE clientes ADD COLUMN foto_blob BLOB")
             except Exception:
                 pass
+            # Trabajadores: es_trabajador = 1 es trabajador, cualquier otro valor es cliente
+            for columna in ("tipo TEXT DEFAULT 'cliente'", "es_trabajador INTEGER DEFAULT 0"):
+                try:
+                    cursor.execute(f"ALTER TABLE clientes ADD COLUMN {columna}")
+                except Exception:
+                    pass
 
             # 2. Tabla de Productos (códigos de barra y soporte API)
             cursor.execute("""
@@ -152,6 +158,18 @@ class DatabaseManager:
                     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
                 )
             """)
+
+    # ==========================================
+    # TRABAJADORES (clientes con es_trabajador = 1)
+    # ==========================================
+
+    def marcar_trabajador(self, codigo, es_trabajador=True):
+        """Marca o desmarca a un cliente como trabajador. También actualiza 'tipo' para que no se contradigan."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE clientes SET es_trabajador = ?, tipo = ? WHERE codigo = ?",
+                           (1 if es_trabajador else 0, "trabajador" if es_trabajador else "cliente", codigo))
+            return cursor.rowcount > 0
 
     # ==========================================
     # GESTIÓN DE CLIENTES
@@ -201,6 +219,7 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT c.id, c.codigo, c.nombre, c.encoding, c.foto_path, c.foto_blob, c.fecha_registro,
+                       c.es_trabajador,
                        COUNT(v.id) AS num_compras,
                        COALESCE(SUM(v.total), 0.0) AS total_gastado
                 FROM clientes c
@@ -208,7 +227,7 @@ class DatabaseManager:
                 GROUP BY c.id
             """)
             for row in cursor.fetchall():
-                c_id, codigo, nombre, enc_bytes, foto_path, foto_blob, fecha_reg, num_compras, total_gastado = row
+                c_id, codigo, nombre, enc_bytes, foto_path, foto_blob, fecha_reg, es_trab, num_compras, total_gastado = row
                 encoding_np = np.frombuffer(enc_bytes, dtype=np.float64)
 
                 # Siempre usar la carpeta local: foto_path puede venir de otra computadora
@@ -228,6 +247,7 @@ class DatabaseManager:
                     "foto_path": foto_local,
                     "tiene_foto_cloud": foto_blob is not None,
                     "fecha_registro": fecha_reg,
+                    "es_trabajador": es_trab == 1,
                     "total_compras": num_compras,
                     "total_gastado": float(total_gastado)
                 })

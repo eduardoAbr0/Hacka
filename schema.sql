@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS clientes (
     encoding BLOB NOT NULL,                  -- Vector facial de 128 floats
     foto_path TEXT,                          -- Ruta local de la foto
     foto_blob BLOB,                          -- Imagen JPG comprimida en binario
-    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tipo TEXT DEFAULT 'cliente',             -- 'cliente' o 'trabajador' (informativo)
+    es_trabajador INTEGER DEFAULT 0          -- 1 = trabajador (la web le pide registrar su huella), otro = cliente
 );
 
 -- 2. PRODUCTOS (Inventario y Lector de Códigos de Barra / API)
@@ -47,3 +49,4 @@ CREATE TABLE IF NOT EXISTS detalle_ventas (
     FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT
 );
+

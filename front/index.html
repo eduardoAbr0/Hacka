@@ -27,7 +27,18 @@
             <div class="espera-icono">👋</div>
             <h1 class="espera-titulo">¡Bienvenido a nuestra tienda!</h1>
             <p class="espera-subtitulo">Acércate a la cámara para ver productos recomendados para ti</p>
-            <p class="espera-pulso">Buscando clientes…</p>
+            <p id="espera-estado" class="espera-pulso">Buscando clientes…</p>
+        </div>
+    </div>
+
+    <!-- ============ Pantalla del trabajador (clientes.es_trabajador = 1) ============
+         Pide la huella una vez; durante el cooldown solo muestra "modo trabajador". -->
+    <div id="pantalla-empleado" class="pantalla-espera pantalla-empleado" hidden>
+        <div class="espera-tarjeta">
+            <div id="empleado-icono" class="espera-icono">👆</div>
+            <h1 id="empleado-titulo" class="espera-titulo">Hola</h1>
+            <p id="empleado-texto" class="espera-subtitulo"></p>
+            <p id="empleado-pulso" class="espera-pulso"></p>
         </div>
     </div>
 

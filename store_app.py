@@ -57,6 +57,19 @@ def draw_hud(frame, service, results):
             cv2.putText(frame, title, (left + 6, bottom + 23), cv2.FONT_HERSHEY_DUPLEX, 0.52, (255, 255, 255), 1, cv2.LINE_AA)
             cv2.putText(frame, subtitle, (left + 6, bottom + 40), cv2.FONT_HERSHEY_DUPLEX, 0.44, (140, 255, 180), 1, cv2.LINE_AA)
 
+        elif status == "empleado":
+            empleado = item["client"]
+            color = (237, 58, 124)  # Morado: trabajador (es_trabajador = 1)
+            draw_corner_rect(frame, (left, top), (right, bottom), color, thickness=3, line_length=25)
+
+            cv2.rectangle(frame, (left, bottom + 5), (right, bottom + 45), (30, 20, 30), -1)
+            cv2.rectangle(frame, (left, bottom + 5), (right, bottom + 45), color, 1)
+
+            cv2.putText(frame, f"{empleado['nombre']} ({empleado['codigo']})", (left + 6, bottom + 23),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.52, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, "Trabajador - registra tu huella", (left + 6, bottom + 40),
+                        cv2.FONT_HERSHEY_DUPLEX, 0.44, (230, 180, 255), 1, cv2.LINE_AA)
+
         elif status == "registering":
             color = (0, 190, 255)  # Ámbar
             draw_corner_rect(frame, (left, top), (right, bottom), color, thickness=2, line_length=20)

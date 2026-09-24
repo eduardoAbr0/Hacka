@@ -13,6 +13,8 @@ const RECOMENDADOR = {
     limitePersonal: 3,          // panel "Sugerencias para ti"
     limiteGeneral: 4,           // cartas "Lo más vendido" (cuadrícula 2 x 2)
     intervaloCamaraMs: 500,     // cada cuánto se revisa si hay cliente frente a la cámara
+    avisoEmpleadoMs: 8000,              // cuánto se le pide "registra tu huella" a un trabajador
+    cooldownEmpleadoMs: 5 * 60 * 1000,  // después no se le vuelve a pedir en 5 min (ve "modo trabajador")
     // Ícono por categoría (los productos no traen imagen)
     iconos: { Bebidas: "🥤", Snacks: "🍿", Lacteos: "🥛", Abarrotes: "🛒", General: "📦" }
 };

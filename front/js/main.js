@@ -7,6 +7,7 @@ const TEXTO_ESTADO = {
     idle: "Esperando cliente",
     registrando: "Identificando rostro…",
     activo: "Cliente en pantalla",
+    empleado: "Trabajador en cámara",
     error: "Sin conexión con la API"
 };
 
@@ -14,6 +15,9 @@ const TEXTO_ESTADO = {
 let personales = [];
 let generales = [];
 let clienteActivo = null;
+
+// Trabajadores (clientes.es_trabajador = 1): cuándo se les pidió la huella por última vez
+const huellaPedida = new Map();          // cliente_id del trabajador -> momento del último aviso (ms)
 
 const el = {};
 
@@ -79,30 +83,61 @@ function mostrarEstadoCamara(estado) {
     el.estadoCamaraTexto.textContent = TEXTO_ESTADO[estado] || TEXTO_ESTADO.idle;
 }
 
-function aplicarEstado(estado, clienteId) {
-    mostrarEstadoCamara(estado);
-    el.espera.hidden = estado !== "idle";
+// Se borran los datos del cliente anterior para que el siguiente no los vea
+function olvidarCliente() {
+    if (clienteActivo !== null) limpiarRecomendaciones(el.sugerencias);
+    clienteActivo = null;
+    personales = [];
+}
 
-    if (estado === "idle") {
-        // Se borran los datos del cliente anterior para que el siguiente no los vea
-        if (clienteActivo !== null) limpiarRecomendaciones(el.sugerencias);
-        clienteActivo = null;
-        personales = [];
-    } else if (estado === "registrando" && clienteActivo === null) {
-        mostrarSaludo("¡Bienvenido! 👋", "Identificando tu perfil…");
-        limpiarRecomendaciones(el.sugerencias);
-        agregarRecomendacion(el.sugerencias, "Mira a la cámara un momento, por favor.", "Un momento ⏳");
-    } else if (estado === "activo" && clienteId && clienteId !== clienteActivo) {
-        clienteActivo = clienteId;
-        cargarPersonales(clienteId);
+/* ---------- Trabajadores ---------- */
+// Mientras el trabajador esté frente a la cámara ve su pantalla (nunca la del cliente).
+// La huella se le pide durante avisoEmpleadoMs; después, hasta que pase el cooldown, solo "modo trabajador".
+function mostrarTrabajador(clienteId, nombre) {
+    const ahora = Date.now();
+    const ultimo = huellaPedida.get(clienteId);
+    if (ultimo === undefined || ahora - ultimo >= RECOMENDADOR.avisoEmpleadoMs + RECOMENDADOR.cooldownEmpleadoMs) {
+        huellaPedida.set(clienteId, ahora);
     }
+    const pidiendoHuella = ahora - huellaPedida.get(clienteId) < RECOMENDADOR.avisoEmpleadoMs;
+
+    el.empleadoTitulo.textContent = nombre ? `Hola, ${nombre}` : "Hola";
+    el.empleadoIcono.textContent = pidiendoHuella ? "👆" : "🧑‍💼";
+    el.empleadoTexto.textContent = pidiendoHuella
+        ? "Eres trabajador de la tienda. Registra tu huella en el lector para marcar tu asistencia."
+        : "Estás en modo trabajador: en esta pantalla no se muestran recomendaciones.";
+    el.empleadoPulso.textContent = pidiendoHuella ? "Registra tu huella" : "Modo trabajador";
+    el.empleado.hidden = false;
+}
+
+function aplicarEstado({ estado = "idle", cliente_id: clienteId, nombre }) {
+    mostrarEstadoCamara(estado);
+    el.empleado.hidden = estado !== "empleado";
+
+    // Solo un cliente confirmado por la cámara ve la interfaz de cliente
+    if (estado === "activo" && clienteId) {
+        el.espera.hidden = true;
+        if (clienteId !== clienteActivo) {
+            clienteActivo = clienteId;
+            cargarPersonales(clienteId);
+        }
+        return;
+    }
+    // Si un cliente ya en pantalla deja de reconocerse un momento, se queda su interfaz
+    if (estado === "registrando" && clienteActivo !== null) return;
+
+    // Nadie, rostro aún sin identificar o trabajador: pantalla de espera, sin datos de clientes
+    olvidarCliente();
+    el.espera.hidden = false;
+    el.esperaEstado.textContent = estado === "registrando" ? "Identificando…" : "Buscando clientes…";
+    if (estado === "empleado") mostrarTrabajador(clienteId, nombre);
 }
 
 // Consulta la cámara, espera la respuesta y vuelve a consultar
 async function monitorearCamara() {
     try {
         const data = await apiRecomendaciones.estadoCamara();
-        aplicarEstado(data.estado || "idle", data.cliente_id);
+        aplicarEstado(data);
     } catch (err) {
         mostrarEstadoCamara("error");
     }
@@ -114,6 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
     el.cartas = document.getElementById("contenedor-cartas");
     el.sugerencias = document.getElementById("recomendaciones");
     el.espera = document.getElementById("pantalla-espera");
+    el.empleado = document.getElementById("pantalla-empleado");
+    el.esperaEstado = document.getElementById("espera-estado");
+    el.empleadoIcono = document.getElementById("empleado-icono");
+    el.empleadoTitulo = document.getElementById("empleado-titulo");
+    el.empleadoTexto = document.getElementById("empleado-texto");
+    el.empleadoPulso = document.getElementById("empleado-pulso");
     el.estadoCamara = document.getElementById("estado-camara");
     el.estadoCamaraTexto = document.getElementById("estado-camara-texto");
     el.saludoTitulo = document.getElementById("saludo-titulo");

@@ -2,6 +2,30 @@ import sys
 import os
 from db_manager import DatabaseManager
 
+def menu_trabajadores(db):
+    """Trabajadores = clientes con es_trabajador = 1. La web les pide registrar su huella."""
+    print("\n--- TRABAJADORES ---")
+    print("  [1] Listar trabajadores")
+    print("  [2] Marcar un cliente como trabajador")
+    print("  [3] Quitar marca de trabajador (vuelve a ser cliente)")
+    opc = input("Seleccione una opcion (1-3): ").strip()
+
+    if opc == "1":
+        trabajadores = [c for c in db.cargar_clientes() if c["es_trabajador"]]
+        if not trabajadores:
+            print("[!] No hay trabajadores registrados.")
+        for t in trabajadores:
+            print(f"  {t['codigo']:<10} {t['nombre']:<30} {t['fecha_registro']}")
+
+    elif opc in ("2", "3"):
+        codigo = input("Codigo del cliente (ej. CLI-0003): ").strip().upper()
+        if db.marcar_trabajador(codigo, es_trabajador=(opc == "2")):
+            print(f"[OK] {codigo} ahora es {'trabajador' if opc == '2' else 'cliente'}.")
+            print("     Recarga la camara (tecla R) para que tome el cambio.")
+        else:
+            print(f"[!] No se encontro el cliente {codigo}.")
+
+
 def menu():
     db = DatabaseManager()
     # Precargar catálogo de ejemplo si está vacío
@@ -22,9 +46,10 @@ def menu():
         print("  [7] Machine Learning: Ver datasets para recomendacion")
         print("  [8] Estadisticas generales")
         print("  [9] Configurar / Conectar a SQLite Cloud")
+        print("  [T] Trabajadores (marcar / desmarcar)")
         print("  [0] Salir")
-        
-        opc = input("\nSeleccione una opcion (0-9): ").strip()
+
+        opc = input("\nSeleccione una opcion (0-9, T): ").strip().upper()
         
         if opc == "1":
             clientes = db.cargar_clientes()
@@ -32,13 +57,14 @@ def menu():
                 print("\n[!] No hay clientes registrados todavia.")
             else:
                 print(f"\nTotal de clientes: {len(clientes)}")
-                print("-" * 85)
-                print(f"{'ID':<5} {'CODIGO':<10} {'NOMBRE':<26} {'COMPRAS':<10} {'GASTADO':<12} {'REGISTRO':<19}")
-                print("-" * 85)
+                print("-" * 97)
+                print(f"{'ID':<5} {'CODIGO':<10} {'NOMBRE':<26} {'TIPO':<12} {'COMPRAS':<10} {'GASTADO':<12} {'REGISTRO':<19}")
+                print("-" * 97)
                 for c in clientes:
                     gastado = f"${c['total_gastado']:.2f}"
-                    print(f"{c['id']:<5} {c['codigo']:<10} {c['nombre']:<26} {c['total_compras']:<10} {gastado:<12} {c['fecha_registro']:<19}")
-                print("-" * 85)
+                    tipo = "trabajador" if c["es_trabajador"] else "cliente"
+                    print(f"{c['id']:<5} {c['codigo']:<10} {c['nombre']:<26} {tipo:<12} {c['total_compras']:<10} {gastado:<12} {c['fecha_registro']:<19}")
+                print("-" * 97)
 
         elif opc == "2":
             codigo = input("Ingrese el codigo del cliente (ej. CLI-0001): ").strip().upper()
@@ -206,6 +232,9 @@ def menu():
                     print(f"[ERROR] No se pudo conectar: {e}")
             else:
                 print("[!] URL invalida o vacia.")
+
+        elif opc == "T":
+            menu_trabajadores(db)
 
         elif opc == "0":
             print("\nHasta luego.")

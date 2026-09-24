@@ -413,6 +413,11 @@ body.sin-scroll { overflow: hidden; }
 
 .pantalla-espera[hidden] { display: none; }
 
+/* Aviso para empleados: encima de la pantalla de espera */
+.pantalla-empleado { z-index: 60; }
+.pantalla-empleado .espera-tarjeta { border-top: 6px solid var(--acento-2); }
+.pantalla-empleado .espera-pulso { color: var(--acento-2); background: #f3edff; }
+
 .espera-tarjeta {
     width: min(580px, 100%);
     padding: 48px 40px;
