@@ -312,6 +312,7 @@ def api_trigger():
 
 
 @app.post("/api/upload")
+@app.post("/api/deteccion")
 def api_upload():
     """
     Recibe la foto/notificación del ESP32.
