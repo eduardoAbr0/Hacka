@@ -51,7 +51,7 @@ function renderizarTabla(lista) {
 
 // Filtrar tabla dinámicamente
 function filtrarTabla() {
-    const query = document.getElementById("input-buscar").value.toLowerCase().strip();
+    const query = document.getElementById("input-buscar").value.toLowerCase().trim();
     if (!query) {
         renderizarTabla(PRODUCTOS_TODOS);
         return;

@@ -1,17 +1,25 @@
+"""
+API web de la tienda: recomendaciones (guia_desarrollador_web.md), estado de la cámara
+e inventario de productos. También sirve las páginas de la carpeta front/.
+
+Ejecutar:  python -m uvicorn api_web:app --reload   (o python run_tienda.py)
+Abrir:     http://127.0.0.1:8000
+"""
 import os
 import time
-import socket
 from typing import Optional
-from pydantic import BaseModel
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from ml_recommender import RecomendadorProductos
 from db_manager import DatabaseManager
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONT_DIR = os.path.join(BASE_DIR, "front")
 
 app = FastAPI(title="Tienda - Recomendaciones e Inventario")
 recomendador = RecomendadorProductos()
@@ -20,20 +28,71 @@ db = DatabaseManager()
 # Permite abrir el frontend desde cualquier servidor o puerto
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# Estado global del escáner de cámara en tiempo real
+
+# ==========================================
+# ESTADO DE LA CÁMARA (lo envía face_service.py)
+# ==========================================
+
+SEGUNDOS_SIN_EVENTO = 4.0  # sin eventos en este tiempo = no hay nadie frente a la cámara
+MENSAJE_ESPERA = "Acércate a la cámara para ver tus sugerencias"
+
 ESTADO_CAMARA = {
     "estado": "idle",
     "cliente_id": None,
     "codigo": None,
-    "mensaje": "Acércate a la cámara para ver tus sugerencias",
+    "mensaje": MENSAJE_ESPERA,
     "last_updated": time.time()
 }
+
 
 class EventoCamara(BaseModel):
     estado: str
     cliente_id: Optional[int] = None
     codigo: Optional[str] = None
     mensaje: Optional[str] = None
+
+
+@app.post("/api/camara/evento")
+def recibir_evento_camara(evento: EventoCamara):
+    ESTADO_CAMARA.update(
+        estado=evento.estado,
+        cliente_id=evento.cliente_id,
+        codigo=evento.codigo,
+        mensaje=evento.mensaje or "¡Hola de nuevo! 👋",
+        last_updated=time.time()
+    )
+    return {"status": "ok"}
+
+
+@app.get("/api/camara/estado")
+def obtener_estado_camara():
+    if time.time() - ESTADO_CAMARA["last_updated"] > SEGUNDOS_SIN_EVENTO:
+        ESTADO_CAMARA.update(estado="idle", cliente_id=None, codigo=None, mensaje=MENSAJE_ESPERA)
+    return ESTADO_CAMARA
+
+
+# ==========================================
+# RECOMENDACIONES
+# ==========================================
+
+@app.get("/api/recomendaciones/{cliente_id}")
+def get_recomendaciones(cliente_id: int, limit: int = Query(3, ge=1, le=20)):
+    datos = recomendador.obtener_recomendaciones(cliente_id=cliente_id, top_n=limit)
+    # Si el modelo no conoce al cliente (sin compras) devuelve populares: no son personales
+    conocido = cliente_id in getattr(recomendador, "user_to_idx", {})
+    for r in datos:
+        r["personalizado"] = conocido
+    return datos
+
+
+@app.get("/api/populares")
+def get_populares(limit: int = Query(4, ge=1, le=20)):
+    return recomendador._recomendar_mas_populares(top_n=limit, motivo="Es de los más vendidos de la tienda")
+
+
+# ==========================================
+# PRODUCTOS E INVENTARIO
+# ==========================================
 
 class ProductoSchema(BaseModel):
     codigo_barras: str
@@ -44,51 +103,16 @@ class ProductoSchema(BaseModel):
     origen: Optional[str] = "local"
 
 
-@app.post("/api/camara/evento")
-def recibir_evento_camara(evento: EventoCamara):
-    global ESTADO_CAMARA
-    ESTADO_CAMARA["estado"] = evento.estado
-    ESTADO_CAMARA["cliente_id"] = evento.cliente_id
-    ESTADO_CAMARA["codigo"] = evento.codigo
-    ESTADO_CAMARA["mensaje"] = evento.mensaje or "¡Hola de nuevo! 👋"
-    ESTADO_CAMARA["last_updated"] = time.time()
-    return {"status": "ok"}
-
-@app.get("/api/camara/estado")
-def obtener_estado_camara():
-    if time.time() - ESTADO_CAMARA["last_updated"] > 4.0:
-        ESTADO_CAMARA["estado"] = "idle"
-        ESTADO_CAMARA["cliente_id"] = None
-        ESTADO_CAMARA["codigo"] = None
-        ESTADO_CAMARA["mensaje"] = "Acércate a la cámara para ver tus sugerencias"
-    return ESTADO_CAMARA
-
-@app.get("/api/recomendaciones/{cliente_id}")
-def get_recomendaciones(cliente_id: int, limit: int = Query(3, ge=1, le=20)):
-    datos = recomendador.obtener_recomendaciones(cliente_id=cliente_id, top_n=limit)
-    conocido = cliente_id in getattr(recomendador, "user_to_idx", {})
-    for r in datos:
-        r["personalizado"] = conocido
-    return datos
-
-@app.get("/api/populares")
-def get_populares(limit: int = Query(4, ge=1, le=20)):
-    return recomendador._recomendar_mas_populares(top_n=limit, motivo="Es de los más vendidos de la tienda")
-
-# ==========================================
-# ENDPOINTS DE GESTIÓN DE PRODUCTOS E INVENTARIO
-# ==========================================
-
 @app.get("/api/productos")
 def listar_productos():
     return db.listar_productos()
 
+
 @app.get("/api/productos/buscar/{codigo_barras}")
 def buscar_producto_codigo(codigo_barras: str):
     prod = db.buscar_producto_por_codigo(codigo_barras)
-    if prod:
-        return {"existe": True, "producto": prod}
-    return {"existe": False, "producto": None}
+    return {"existe": prod is not None, "producto": prod}
+
 
 @app.post("/api/productos")
 def crear_o_actualizar_producto(prod: ProductoSchema):
@@ -99,8 +123,9 @@ def crear_o_actualizar_producto(prod: ProductoSchema):
     if prod.precio < 0:
         raise HTTPException(status_code=400, detail="El precio no puede ser negativo.")
 
-    p_id = db.crear_producto(
-        codigo_barras=prod.codigo_barras.strip(),
+    codigo = prod.codigo_barras.strip()
+    db.crear_producto(
+        codigo_barras=codigo,
         nombre=prod.nombre.strip(),
         categoria=prod.categoria.strip() if prod.categoria else "General",
         precio=prod.precio,
@@ -108,20 +133,24 @@ def crear_o_actualizar_producto(prod: ProductoSchema):
         origen=prod.origen or "local"
     )
 
-    # Actualizar lista de productos en memoria del recomendador
-    recomendador.productos_map[p_id] = db.buscar_producto_por_codigo(prod.codigo_barras)
+    # Se busca de nuevo porque lastrowid no da el id cuando el producto ya existía (upsert)
+    guardado = db.buscar_producto_por_codigo(codigo)
+    recomendador.productos_map[guardado["id"]] = guardado
 
     return {
         "status": "ok",
         "mensaje": f"Producto '{prod.nombre}' registrado con éxito.",
-        "producto_id": p_id
+        "producto_id": guardado["id"]
     }
 
-from fastapi.responses import FileResponse
+
+# ==========================================
+# PÁGINAS (carpeta front/)
+# ==========================================
 
 @app.get("/productos")
 def pagina_registro_productos():
-    return FileResponse(os.path.join(BASE_DIR, "front", "productos.html"))
+    return FileResponse(os.path.join(FRONT_DIR, "productos.html"))
 
-# Servir archivos estáticos del frontend
-app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, "front"), html=True), name="front")
+
+app.mount("/", StaticFiles(directory=FRONT_DIR, html=True), name="front")

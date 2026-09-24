@@ -3,54 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda Inteligente - Recomendaciones</title>
+    <title>Tienda Inteligente</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Barra superior con logo y nombre del negocio -->
+    <!-- ============ Barra superior ============ -->
     <header class="barra-superior">
         <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
         <span id="nombre-negocio" class="nombre-negocio"></span>
-        <div id="badge-camara-status" class="badge-camara">
+        <nav class="nav">
+            <a href="index.html" class="nav-link activo">Productos</a>
+            <a href="ventas.html" class="nav-link">Mi carrito</a>
+        </nav>
+        <div id="estado-camara" class="badge-camara">
             <span class="dot-camara"></span>
-            <span id="texto-camara-status">Escáner de cámara listo</span>
+            <span id="estado-camara-texto">Conectando…</span>
         </div>
     </header>
 
-    <!-- Pantalla de Presentación / Espera (Standby Kiosco) -->
+    <!-- ============ Pantalla de espera (sin cliente frente a la cámara) ============ -->
     <div id="pantalla-espera" class="pantalla-espera">
         <div class="espera-tarjeta">
-            <div class="espera-icono">👁️✨</div>
-            <h1 class="espera-titulo">¡Bienvenido a nuestra Tienda!</h1>
-            <p class="espera-subtitulo">Acércate a la pantalla para ver tus recomendaciones de productos personalizadas</p>
-            <div class="espera-pulso">
-                <span class="pulso-onda"></span>
-                <span class="pulso-texto">Escaneando cámara en búsqueda de clientes...</span>
-            </div>
+            <div class="espera-icono">👋</div>
+            <h1 class="espera-titulo">¡Bienvenido a nuestra tienda!</h1>
+            <p class="espera-subtitulo">Acércate a la cámara para ver productos recomendados para ti</p>
+            <p class="espera-pulso">Buscando clientes…</p>
         </div>
     </div>
 
+    <!-- ============ Contenido principal ============ -->
     <main class="layout">
-        <!-- Panel de recomendaciones personales -->
+        <!-- Izquierda: recomendaciones personales del cliente -->
         <aside class="panel-recomendaciones">
             <div class="recomendaciones-cabecera">
                 <span class="recomendaciones-icono">✨</span>
                 <div>
-                    <h2 id="titulo-saludo" class="recomendaciones-titulo">¡Hola de nuevo! 👋</h2>
-                    <p id="subtitulo-saludo" class="recomendaciones-subtitulo">Sugerencias personalizadas para ti</p>
+                    <h2 id="saludo-titulo" class="recomendaciones-titulo">Sugerencias para ti</h2>
+                    <p id="saludo-subtitulo" class="recomendaciones-subtitulo">Según tus compras anteriores</p>
                 </div>
             </div>
             <div id="recomendaciones" class="recomendaciones-lista" aria-live="polite"></div>
         </aside>
 
-        <!-- Cartas de productos más vendidos -->
+        <!-- Derecha: productos más vendidos para todos -->
         <section class="panel-productos">
-            <h1 class="panel-titulo">Lo más vendido en la tienda</h1>
+            <h1 class="panel-titulo">Lo más vendido</h1>
             <div id="contenedor-cartas" class="grid-cartas"></div>
         </section>
     </main>
 
-    <!-- Ventana emergente: por qué se recomienda -->
+    <!-- ============ Ventana emergente: por qué se recomienda ============ -->
     <div id="modal" class="modal" hidden>
         <div class="modal-fondo" data-cerrar></div>
         <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
@@ -65,11 +67,13 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/productos.js"></script>
-    <script src="js/cartas.js"></script>
-    <script src="js/recomendaciones.js"></script>
-    <script src="js/modal.js"></script>
-    <script src="js/main.js"></script>
+    <!-- ============ Scripts (el orden importa) ============ -->
+    <script src="js/config.js"></script>            <!-- datos del negocio y de la API -->
+    <script src="js/utils.js"></script>             <!-- precio, imagen por defecto, barra superior -->
+    <script src="js/api-recomendaciones.js"></script> <!-- llamadas a api_web.py -->
+    <script src="js/cartas.js"></script>            <!-- cartas de "Lo más vendido" -->
+    <script src="js/recomendaciones.js"></script>   <!-- panel "Sugerencias para ti" -->
+    <script src="js/modal.js"></script>             <!-- ventana "¿Por qué te lo recomendamos?" -->
+    <script src="js/main.js"></script>              <!-- arranque y monitoreo de la cámara -->
 </body>
 </html>
