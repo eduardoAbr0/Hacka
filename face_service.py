@@ -8,8 +8,21 @@ import numpy as np
 import face_recognition
 from db_manager import DatabaseManager
 
+ULTIMO_EVENTO_ENVIADO = {"estado": None, "cliente_id": None, "time": 0}
+
 def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, api_url="http://127.0.0.1:8000/api/camara/evento"):
-    """Envía una notificación asíncrona a la API Web para sincronizar el estado de la pantalla."""
+    """Envía una notificación asíncrona con control de tasa a la API Web."""
+    now = time.time()
+    # Evitar ráfagas duplicadas si el estado no ha cambiado y han pasado menos de 0.8s
+    if (ULTIMO_EVENTO_ENVIADO["estado"] == estado and 
+        ULTIMO_EVENTO_ENVIADO["cliente_id"] == cliente_id and 
+        now - ULTIMO_EVENTO_ENVIADO["time"] < 0.8):
+        return
+
+    ULTIMO_EVENTO_ENVIADO["estado"] = estado
+    ULTIMO_EVENTO_ENVIADO["cliente_id"] = cliente_id
+    ULTIMO_EVENTO_ENVIADO["time"] = now
+
     def _envio():
         try:
             payload = json.dumps({
@@ -19,7 +32,8 @@ def notificar_evento_web(estado, cliente_id=None, codigo=None, mensaje=None, api
                 "mensaje": mensaje or "¡Hola de nuevo! 👋"
             }).encode('utf-8')
             req = urllib.request.Request(api_url, data=payload, headers={'Content-Type': 'application/json'})
-            urllib.request.urlopen(req, timeout=1.0)
+            with urllib.request.urlopen(req, timeout=1.0) as resp:
+                resp.read()
         except Exception:
             pass
 
