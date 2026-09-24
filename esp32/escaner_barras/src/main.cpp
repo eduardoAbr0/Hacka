@@ -134,8 +134,14 @@ void loop() {
   float distancia = obtenerDistanciaCM();
 
   if (distancia > 0 && distancia < 20.0) {
-    Serial.printf("Objeto detectado a %.1f cm! Tomando foto...\n", distancia);
+    Serial.printf("Objeto detectado a %.1f cm. Estabilizando enfoque (esperando 700 ms)...\n", distancia);
     
+    // Encender LED levemente para indicar preparación y dar 700ms para estabilizar la mano
+    digitalWrite(LED_PIN, HIGH);
+    delay(700);
+    digitalWrite(LED_PIN, LOW);
+
+    Serial.println("Tomando foto...");
     if (tomarYGuardarFoto()) {
       Serial.println("Captura completada con éxito.");
     } else {
@@ -167,10 +173,10 @@ float obtenerDistanciaCM() {
 // Captura, convierte a JPG y guarda en SD
 bool tomarYGuardarFoto() {
   // Descartar primeros frames acumulados para actualizar la exposición/brillo del sensor
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 5; i++) {
     camera_fb_t * tmp = esp_camera_fb_get();
     if (tmp) esp_camera_fb_return(tmp);
-    delay(40);
+    delay(50);
   }
 
   camera_fb_t * fb = esp_camera_fb_get();

@@ -4,7 +4,7 @@ const NEGOCIO = {
     logo: "img/logo.svg"
 };
 
-// Dirección de la API de fotos (API_foto.py).
-// Si la página la sirve la propia API se usa la misma dirección;
-// si se abre como archivo, se usa localhost.
-const API_URL = location.protocol.startsWith("http") ? "" : "http://localhost:3000";
+// Dirección de la API de fotos (API_foto.py)
+const API_URL = (location.hostname && location.port === "3000") 
+    ? "" 
+    : `http://${location.hostname || "localhost"}:3000`;

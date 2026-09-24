@@ -23,21 +23,33 @@
         <!-- Izquierda: foto grande -->
         <section class="visor">
             <div class="visor-cabecera">
-                <h1 class="visor-titulo">Última foto</h1>
+                <h1 class="visor-titulo">Última foto HD</h1>
                 <span id="estado-esp32" class="estado desconectado">
                     <span class="estado-punto"></span>
                     <span id="estado-texto">Buscando la API…</span>
                 </span>
             </div>
 
+            <!-- Panel de Control de Cámara Celular -->
+            <div class="panel-camara-celular" style="margin-bottom: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button id="btn-trigger" class="btn btn-primario" type="button" style="padding: 8px 16px; cursor: pointer;">
+                    📸 Tomar Foto Ahora (Celular)
+                </button>
+                <div style="display: inline-flex; gap: 6px; align-items: center;">
+                    <label for="input-ip-celular" style="font-size: 0.85rem; color: var(--texto-secundario, #666);">IP Celular:</label>
+                    <input id="input-ip-celular" type="text" placeholder="http://192.168.1.50:8080/shot.jpg" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; width: 230px;">
+                    <button id="btn-guardar-ip" type="button" style="padding: 6px 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc;">Guardar IP</button>
+                </div>
+            </div>
+
             <div class="visor-foto">
-                <img id="foto-grande" alt="Foto tomada por el ESP32" hidden>
+                <img id="foto-grande" alt="Foto tomada" hidden>
                 <p id="visor-vacio" class="visor-vacio">📷<br>Aún no hay fotos</p>
             </div>
 
             <div class="visor-pie">
                 <span id="foto-info" class="foto-info"></span>
-                <span class="aviso-sensor">📡 Acerca un objeto a menos de 20 cm del sensor para tomar una foto</span>
+                <span class="aviso-sensor">📡 Al acercar un objeto a menos de 20 cm del ESP32, se tomará una foto HD automáticamente desde la cámara del celular.</span>
             </div>
         </section>
 

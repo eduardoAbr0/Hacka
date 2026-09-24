@@ -132,11 +132,102 @@ function alternarSeleccion(id) {
     renderizar();
 }
 
+/* ---------- Monitoreo de Escáner de Cámara ---------- */
+let ultimoTimestampScan = null;
+
+async function syncProductosBaseDatos() {
+    if (typeof apiFotos === "undefined") return;
+    const dbProds = await apiFotos.obtenerProductos();
+    if (dbProds && dbProds.length > 0) {
+        dbProds.forEach((dbP) => {
+            const index = PRODUCTOS.findIndex((p) => p.id === dbP.id || p.codigo_barras === dbP.codigo_barras);
+            if (index >= 0) {
+                PRODUCTOS[index] = { ...PRODUCTOS[index], ...dbP };
+            } else {
+                PRODUCTOS.push(dbP);
+            }
+        });
+        renderizar();
+    }
+}
+
+async function monitorearCamaraEscaneos() {
+    if (typeof apiFotos === "undefined") return;
+    try {
+        const est = await apiFotos.estado();
+        if (est && est.ultimo_escaneo && est.ultimo_escaneo.timestamp !== ultimoTimestampScan) {
+            ultimoTimestampScan = est.ultimo_escaneo.timestamp;
+            const esc = est.ultimo_escaneo;
+            if (esc.producto) {
+                let p = PRODUCTOS.find((x) => x.id === esc.producto.id || x.codigo_barras === esc.producto.codigo_barras);
+                if (!p) {
+                    p = esc.producto;
+                    PRODUCTOS.push(p);
+                }
+                agregarProducto(p.id);
+                const aviso = document.querySelector(".aviso-escanear");
+                if (aviso) {
+                    aviso.innerHTML = `<span class="aviso-icono">✨</span> ¡Producto Agregado!: <strong>${p.nombre}</strong> (${formatearPrecio(p.precio)})`;
+                    aviso.style.background = "#d1fae5";
+                    aviso.style.color = "#065f46";
+                    aviso.style.border = "1px solid #a7f3d0";
+                    setTimeout(() => {
+                        aviso.innerHTML = `<span class="aviso-icono">📷</span> Para agregar tus compras, escanea el código de barras con la cámara`;
+                        aviso.style.background = "";
+                        aviso.style.color = "";
+                        aviso.style.border = "";
+                    }, 4000);
+                }
+            } else if (esc.tipo === "no_encontrado" || esc.codigo_barras) {
+                const aviso = document.querySelector(".aviso-escanear");
+                if (aviso) {
+                    aviso.innerHTML = `<span class="aviso-icono">❌</span> <strong>Producto no encontrado</strong> (Código: <strong>${esc.codigo_barras}</strong>) — No está registrado en inventario.`;
+                    aviso.style.background = "#fee2e2";
+                    aviso.style.color = "#991b1b";
+                    aviso.style.border = "1px solid #fca5a5";
+                    setTimeout(() => {
+                        aviso.innerHTML = `<span class="aviso-icono">📷</span> Para agregar tus compras, escanea el código de barras con la cámara`;
+                        aviso.style.background = "";
+                        aviso.style.color = "";
+                        aviso.style.border = "";
+                    }, 6000);
+                }
+                if (typeof dialogo !== "undefined" && dialogo.mensaje) {
+                    dialogo.mensaje({
+                        icono: "❌",
+                        titulo: "Producto no encontrado",
+                        texto: `El código de barras "${esc.codigo_barras}" fue analizado pero no existe en el inventario.`,
+                        textoSi: "Entendido"
+                    });
+                }
+            } else if (esc.tipo === "sin_codigo") {
+                const aviso = document.querySelector(".aviso-escanear");
+                if (aviso) {
+                    aviso.innerHTML = `<span class="aviso-icono">⚠️</span> <strong>Foto capturada sin código</strong> — Acerca más el código de barras a la cámara.`;
+                    aviso.style.background = "#fef3c7";
+                    aviso.style.color = "#92400e";
+                    aviso.style.border = "1px solid #fde68a";
+                    setTimeout(() => {
+                        aviso.innerHTML = `<span class="aviso-icono">📷</span> Para agregar tus compras, escanea el código de barras con la cámara`;
+                        aviso.style.background = "";
+                        aviso.style.color = "";
+                        aviso.style.border = "";
+                    }, 4000);
+                }
+            }
+        }
+    } catch (e) { }
+}
+
 /* ---------- Inicio ---------- */
 document.addEventListener("DOMContentLoaded", () => {
     iniciarBarraSuperior();
     dialogo.iniciar();
+    syncProductosBaseDatos();
     renderizar();
+
+    // Monitorear escáner cada 1.5 segundos
+    setInterval(monitorearCamaraEscaneos, 1500);
 
     const lista = document.getElementById("lista-compras");
 

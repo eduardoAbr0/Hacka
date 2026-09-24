@@ -91,7 +91,16 @@ async function actualizar() {
 
         if (estado.ultima_subida) {
             const reciente = Date.now() - new Date(estado.ultima_subida) < RECIENTE_MS;
-            renderizarEstado(reciente, `Última foto ${haceCuanto(estado.ultima_subida)} (${estado.ip_esp32})`);
+            let txt = `Última foto ${haceCuanto(estado.ultima_subida)}`;
+            if (estado.ultimo_escaneo) {
+                const esc = estado.ultimo_escaneo;
+                if (esc.producto) {
+                    txt += ` · 📦 ${esc.producto.nombre} (${esc.codigo_barras})`;
+                } else if (esc.codigo_barras) {
+                    txt += ` · ❌ Código ${esc.codigo_barras} (No encontrado en inventario)`;
+                }
+            }
+            renderizarEstado(reciente, txt);
         } else {
             renderizarEstado(false, "Esperando la primera foto del ESP32");
         }
@@ -105,6 +114,55 @@ document.addEventListener("DOMContentLoaded", () => {
     iniciarBarraSuperior();
     actualizar();
     setInterval(actualizar, INTERVALO_ACTUALIZAR_MS);
+
+    // Cargar configuración de cámara IP
+    apiFotos.configCamara().then((cfg) => {
+        if (cfg && cfg.ip_cam_url) {
+            const input = document.getElementById("input-ip-celular");
+            if (input && !input.value) input.value = cfg.ip_cam_url;
+        }
+    }).catch(() => {});
+
+    // Botón para guardar nueva IP de celular
+    const btnGuardar = document.getElementById("btn-guardar-ip");
+    if (btnGuardar) {
+        btnGuardar.addEventListener("click", async () => {
+            const input = document.getElementById("input-ip-celular");
+            if (!input || !input.value.trim()) return;
+            try {
+                btnGuardar.textContent = "Guardando...";
+                await apiFotos.guardarConfigCamara(input.value.trim());
+                btnGuardar.textContent = "¡Guardado!";
+                setTimeout(() => { btnGuardar.textContent = "Guardar IP"; }, 2000);
+            } catch (err) {
+                alert("Error al guardar IP de la cámara");
+                btnGuardar.textContent = "Guardar IP";
+            }
+        });
+    }
+
+    // Botón para disparar foto con celular manualmente
+    const btnTrigger = document.getElementById("btn-trigger");
+    if (btnTrigger) {
+        btnTrigger.addEventListener("click", async () => {
+            try {
+                btnTrigger.disabled = true;
+                btnTrigger.textContent = "📸 Tomando foto HD...";
+                const res = await apiFotos.trigger();
+                if (res.ok) {
+                    siguiendoUltima = true;
+                    await actualizar();
+                } else {
+                    alert("Error: " + (res.error || "No se pudo tomar foto"));
+                }
+            } catch (err) {
+                alert("Error al conectar con el servidor API");
+            } finally {
+                btnTrigger.disabled = false;
+                btnTrigger.textContent = "📸 Tomar Foto Ahora (Celular)";
+            }
+        });
+    }
 
     // Ver una foto de la galería
     document.getElementById("galeria-lista").addEventListener("click", (e) => {

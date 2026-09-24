@@ -62,13 +62,20 @@ class DatabaseManager:
     @contextlib.contextmanager
     def get_connection(self):
         """Retorna conexión a SQLite Cloud si está configurada, o a SQLite local."""
+        cloud_success = False
         if self.cloud_url and SQLITE_CLOUD_AVAILABLE:
-            conn = sqlitecloud.connect(self.cloud_url)
             try:
-                yield conn
-            finally:
-                conn.close()
-        else:
+                conn = sqlitecloud.connect(self.cloud_url)
+                cloud_success = True
+                try:
+                    yield conn
+                finally:
+                    conn.close()
+                return
+            except Exception as e:
+                print(f"[DB] Error de red en SQLite Cloud ({e}). Usando base de datos local SQLite: {self.db_path}")
+
+        if not cloud_success:
             conn = sqlite3.connect(self.db_path, timeout=15.0)
             conn.execute("PRAGMA foreign_keys = ON")
             conn.execute("PRAGMA busy_timeout = 10000")
