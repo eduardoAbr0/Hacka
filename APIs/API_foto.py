@@ -41,7 +41,7 @@ NOMBRE_VALIDO = re.compile(r"^[\w\-]+\.jpg$")
 # Ejemplo IP Webcam: http://192.168.1.50:8080/shot.jpg
 # Ejemplo DroidCam:  http://192.168.1.50:4747/cam/1/frame.jpg
 CONFIG_CAMARA = {
-    "ip_cam_url": os.environ.get("IP_CAM_URL", "http://192.168.1.50:8080/shot.jpg"),
+    "ip_cam_url": os.environ.get("IP_CAM_URL", "http://10.32.0.62:8080/shot.jpg"),
     "usar_camara_celular": os.environ.get("USAR_CAMARA_CELULAR", "true").lower() in ("true", "1", "yes"),
     "timeout": 5
 }
@@ -369,6 +369,36 @@ def api_config_camara():
         "usar_camara_celular": CONFIG_CAMARA["usar_camara_celular"],
         "timeout": CONFIG_CAMARA["timeout"]
     })
+
+
+# ---------- Proxies para conectar index.html con api_web.py (puerto 8000) ----------
+@app.get("/api/camara/estado")
+def proxy_camara_estado():
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8000/api/camara/estado", timeout=2) as resp:
+            return resp.read(), 200, {"Content-Type": "application/json"}
+    except Exception:
+        return jsonify({"estado": "idle", "cliente_id": None, "mensaje": "Esperando cliente"}), 200
+
+
+@app.get("/api/populares")
+def proxy_populares():
+    try:
+        limit = request.args.get("limit", 4)
+        with urllib.request.urlopen(f"http://127.0.0.1:8000/api/populares?limit={limit}", timeout=2) as resp:
+            return resp.read(), 200, {"Content-Type": "application/json"}
+    except Exception:
+        return jsonify([]), 200
+
+
+@app.get("/api/recomendaciones/<int:cliente_id>")
+def proxy_recomendaciones(cliente_id):
+    try:
+        limit = request.args.get("limit", 3)
+        with urllib.request.urlopen(f"http://127.0.0.1:8000/api/recomendaciones/{cliente_id}?limit={limit}", timeout=2) as resp:
+            return resp.read(), 200, {"Content-Type": "application/json"}
+    except Exception:
+        return jsonify([]), 200
 
 
 @app.get("/api/estado")

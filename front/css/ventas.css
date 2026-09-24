@@ -289,3 +289,49 @@
     .lista-compras { max-height: 55vh; }
     .compra-imagen { width: 56px; height: 56px; }
 }
+
+/* ---------- Banner de Autenticación Facial ---------- */
+.banner-facial {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 16px 16px 0;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid;
+    transition: all 0.25s ease;
+}
+
+.banner-facial.bloqueado {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+.banner-facial.desbloqueado {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.facial-icono {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.facial-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.facial-info strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.facial-info span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.9;
+}

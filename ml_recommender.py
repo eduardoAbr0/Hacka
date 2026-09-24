@@ -161,6 +161,7 @@ class RecomendadorProductos:
                     "nombre": p_info["nombre"],
                     "categoria": p_info["categoria"],
                     "precio": float(p_info["precio"]),
+                    "imagen_url": p_info.get("imagen_url"),
                     "score": round(score_val, 3),
                     "motivo": motivo
                 })
@@ -191,6 +192,7 @@ class RecomendadorProductos:
                     "nombre": p_info["nombre"],
                     "categoria": p_info["categoria"],
                     "precio": float(p_info["precio"]),
+                    "imagen_url": p_info.get("imagen_url"),
                     "score": 1.0,
                     "motivo": motivo
                 })

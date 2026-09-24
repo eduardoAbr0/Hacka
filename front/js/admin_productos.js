@@ -32,21 +32,25 @@ async function cargarInventario() {
 function renderizarTabla(lista) {
     const cuerpo = document.getElementById("tabla-cuerpo");
     if (lista.length === 0) {
-        cuerpo.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--texto-suave);">No se encontraron productos en el inventario.</td></tr>`;
+        cuerpo.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--texto-suave);">No se encontraron productos en el inventario.</td></tr>`;
         return;
     }
 
-    cuerpo.innerHTML = lista.map(p => `
-        <tr>
-            <td><strong>#${p.id}</strong></td>
-            <td><code>${p.codigo_barras}</code></td>
-            <td><strong>${p.nombre}</strong></td>
-            <td>${p.categoria}</td>
-            <td style="color:var(--acento); font-weight:700;">$${Number(p.precio).toFixed(2)}</td>
-            <td>${p.stock} pzas</td>
-            <td><span class="badge-origen ${p.origen === 'api' ? 'origen-api' : 'origen-local'}">${p.origen}</span></td>
-        </tr>
-    `).join("");
+    cuerpo.innerHTML = lista.map(p => {
+        const imgUrl = p.imagen_url || "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 100 100"><rect width="100" height="100" fill="#f1f5f9"/><text x="50" y="55" font-size="30" text-anchor="middle" fill="#94a3b8">📦</text></svg>');
+        return `
+            <tr>
+                <td><img src="${imgUrl}" alt="${p.nombre}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid var(--borde);" onerror="this.src='${imgUrl}';"></td>
+                <td><strong>#${p.id}</strong></td>
+                <td><code>${p.codigo_barras}</code></td>
+                <td><strong>${p.nombre}</strong></td>
+                <td>${p.categoria}</td>
+                <td style="color:var(--acento); font-weight:700;">$${Number(p.precio).toFixed(2)}</td>
+                <td>${p.stock} pzas</td>
+                <td><span class="badge-origen ${p.origen === 'api' ? 'origen-api' : 'origen-local'}">${p.origen}</span></td>
+            </tr>
+        `;
+    }).join("");
 }
 
 // Filtrar tabla dinámicamente
@@ -76,6 +80,9 @@ async function verificarCodigoBarras(codigo) {
             document.getElementById("categoria").value = p.categoria || "General";
             document.getElementById("precio").value = p.precio;
             document.getElementById("stock").value = p.stock;
+            if (document.getElementById("imagen_url")) {
+                document.getElementById("imagen_url").value = p.imagen_url || "";
+            }
             mostrarAlerta(`Código '${codigo}' ya existe. Los datos se actualizarán al guardar.`, false);
         }
     } catch (err) {
@@ -102,13 +109,15 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        const imgInput = document.getElementById("imagen_url");
         const payload = {
             codigo_barras: document.getElementById("codigo_barras").value.trim(),
             nombre: document.getElementById("nombre").value.trim(),
             categoria: document.getElementById("categoria").value,
             precio: parseFloat(document.getElementById("precio").value),
             stock: parseInt(document.getElementById("stock").value, 10),
-            origen: "local"
+            origen: "local",
+            imagen_url: imgInput ? imgInput.value.trim() : null
         };
 
         try {

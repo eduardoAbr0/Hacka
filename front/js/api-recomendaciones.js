@@ -18,7 +18,7 @@ function adaptarProducto(r) {
         nombre: r.nombre,
         descripcion: r.categoria,
         precio: r.precio,
-        imagen: imagenDeCategoria(r.categoria),
+        imagen: r.imagen_url || r.imagen || imagenDeCategoria(r.categoria),
         razon: r.motivo,
         personalizado: r.personalizado !== false
     };

@@ -6,8 +6,10 @@ const NEGOCIO = {
 
 // API de recomendaciones y cámara (api_web.py) — usada por index.html
 const RECOMENDADOR = {
-    // Vacío = misma dirección que la página. Si abres el HTML como archivo, usa el puerto 8000
-    url: location.protocol === "file:" ? "http://127.0.0.1:8000" : "",
+    // Apunta al puerto 8000 (api_web.py) independientemente del puerto en que se abra la página
+    url: (location.hostname && location.port === "8000") 
+        ? "" 
+        : `http://${location.hostname || "127.0.0.1"}:8000`,
     limitePersonal: 3,          // panel "Sugerencias para ti"
     limiteGeneral: 4,           // cartas "Lo más vendido" (cuadrícula 2 x 2)
     intervaloCamaraMs: 500,     // cada cuánto se revisa si hay cliente frente a la cámara

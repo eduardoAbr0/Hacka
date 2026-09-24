@@ -18,7 +18,8 @@ function crearCarta(producto) {
     `;
 
     const img = carta.querySelector(".carta-imagen");
-    img.src = producto.imagen || IMAGEN_POR_DEFECTO;
+    img.src = producto.imagen || producto.imagen_url || IMAGEN_POR_DEFECTO;
+    img.onerror = () => { img.src = IMAGEN_POR_DEFECTO; };
     img.alt = producto.nombre;
     carta.querySelector(".carta-nombre").textContent = producto.nombre;
     carta.querySelector(".carta-descripcion").textContent = producto.descripcion;

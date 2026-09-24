@@ -119,9 +119,14 @@ class DatabaseManager:
                     categoria TEXT DEFAULT 'General',
                     precio REAL NOT NULL,
                     stock INTEGER DEFAULT 0,
-                    origen TEXT DEFAULT 'local'
+                    origen TEXT DEFAULT 'local',
+                    imagen_url TEXT
                 )
             """)
+            try:
+                cursor.execute("ALTER TABLE productos ADD COLUMN imagen_url TEXT")
+            except Exception:
+                pass
 
             # 3. Tabla de Ventas (Cabecera de tickets)
             cursor.execute("""
@@ -248,27 +253,30 @@ class DatabaseManager:
     # ==========================================
     # GESTIÓN DE PRODUCTOS (CÓDIGOS DE BARRA / APIS)
     # ==========================================
+    # GESTIÓN DE PRODUCTOS E INVENTARIO
+    # ==========================================
 
-    def crear_producto(self, codigo_barras, nombre, categoria="General", precio=0.0, stock=100, origen="local"):
+    def crear_producto(self, codigo_barras, nombre, categoria="General", precio=0.0, stock=100, origen="local", imagen_url=None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO productos (codigo_barras, nombre, categoria, precio, stock, origen)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO productos (codigo_barras, nombre, categoria, precio, stock, origen, imagen_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(codigo_barras) DO UPDATE SET
                     nombre = excluded.nombre,
                     categoria = excluded.categoria,
                     precio = excluded.precio,
                     stock = excluded.stock,
-                    origen = excluded.origen
-            """, (str(codigo_barras).strip(), nombre, categoria, float(precio), int(stock), origen))
+                    origen = excluded.origen,
+                    imagen_url = COALESCE(excluded.imagen_url, productos.imagen_url)
+            """, (str(codigo_barras).strip(), nombre, categoria, float(precio), int(stock), origen, imagen_url))
             return cursor.lastrowid
 
     def buscar_producto_por_codigo(self, codigo_barras):
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, codigo_barras, nombre, categoria, precio, stock, origen
+                SELECT id, codigo_barras, nombre, categoria, precio, stock, origen, imagen_url
                 FROM productos
                 WHERE codigo_barras = ?
             """, (str(codigo_barras).strip(),))
@@ -276,37 +284,45 @@ class DatabaseManager:
             if row:
                 return {
                     "id": row[0], "codigo_barras": row[1], "nombre": row[2],
-                    "categoria": row[3], "precio": float(row[4]), "stock": row[5], "origen": row[6]
+                    "categoria": row[3], "precio": float(row[4]), "stock": row[5],
+                    "origen": row[6], "imagen_url": row[7]
                 }
             return None
 
     def listar_productos(self):
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, codigo_barras, nombre, categoria, precio, stock, origen FROM productos ORDER BY categoria, nombre")
+            cursor.execute("SELECT id, codigo_barras, nombre, categoria, precio, stock, origen, imagen_url FROM productos ORDER BY categoria, nombre")
             filas = cursor.fetchall()
             return [{
                 "id": r[0], "codigo_barras": r[1], "nombre": r[2],
-                "categoria": r[3], "precio": float(r[4]), "stock": r[5], "origen": r[6]
+                "categoria": r[3], "precio": float(r[4]), "stock": r[5],
+                "origen": r[6], "imagen_url": r[7]
             } for r in filas]
 
     def precargar_productos_ejemplo(self):
+        ejemplos = [
+            ("7501055310884", "Coca-Cola Original 600ml", "Bebidas", 18.50, 50, "local", "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop"),
+            ("7501000111207", "Papas Sabritas Sal 45g", "Snacks", 22.00, 40, "local", "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&auto=format&fit=crop"),
+            ("7501030467145", "Agua Ciel Purificada 1L", "Bebidas", 14.00, 60, "local", "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=500&auto=format&fit=crop"),
+            ("7501000153108", "Galletas Emperador Chocolate 101g", "Snacks", 19.50, 35, "local", "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=500&auto=format&fit=crop"),
+            ("7501020512345", "Leche Lala Entera 1L", "Lacteos", 26.50, 30, "local", "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&auto=format&fit=crop"),
+            ("7501032300129", "Cafe Soluble Nescafe Clasico 120g", "Abarrotes", 68.00, 20, "local", "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&auto=format&fit=crop")
+        ]
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM productos")
             if cursor.fetchone()[0] == 0:
-                ejemplos = [
-                    ("7501055310884", "Coca-Cola Original 600ml", "Bebidas", 18.50, 50, "local"),
-                    ("7501000111207", "Papas Sabritas Sal 45g", "Snacks", 22.00, 40, "local"),
-                    ("7501030467145", "Agua Ciel Purificada 1L", "Bebidas", 14.00, 60, "local"),
-                    ("7501000153108", "Galletas Emperador Chocolate 101g", "Snacks", 19.50, 35, "local"),
-                    ("7501020512345", "Leche Lala Entera 1L", "Lacteos", 26.50, 30, "local"),
-                    ("7501032300129", "Cafe Soluble Nescafe Clasico 120g", "Abarrotes", 68.00, 20, "local")
-                ]
                 cursor.executemany("""
-                    INSERT INTO productos (codigo_barras, nombre, categoria, precio, stock, origen)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO productos (codigo_barras, nombre, categoria, precio, stock, origen, imagen_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, ejemplos)
+            else:
+                # Actualizar imágenes en productos precargados si están nulas
+                for code, name, cat, price, stock, orig, img in ejemplos:
+                    cursor.execute("""
+                        UPDATE productos SET imagen_url = ? WHERE codigo_barras = ? AND (imagen_url IS NULL OR imagen_url = '')
+                    """, (img, code))
 
     # ==========================================
     # GESTIÓN DE VENTAS
