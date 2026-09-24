@@ -1,6 +1,6 @@
 // Datos del negocio (cambiar aquí el nombre y el logo)
 const NEGOCIO = {
-    nombre: "Mi Negocio",
+    nombre: "InteSup",
     logo: "img/logo.svg"
 };
 
@@ -15,8 +15,7 @@ const RECOMENDADOR = {
     intervaloCamaraMs: 500,     // cada cuánto se revisa si hay cliente frente a la cámara
     avisoEmpleadoMs: 8000,              // cuánto se le pide "registra tu huella" a un trabajador
     cooldownEmpleadoMs: 5 * 60 * 1000,  // después no se le vuelve a pedir en 5 min (ve "modo trabajador")
-    // Ícono por categoría (los productos no traen imagen)
-    iconos: { Bebidas: "🥤", Snacks: "🍿", Lacteos: "🥛", Abarrotes: "🛒", General: "📦" }
+    permanenciaClienteMs: 20000         // la interfaz del cliente se queda 20 s aunque la cámara deje de verlo
 };
 
 // Dirección de la API de fotos (API_foto.py)

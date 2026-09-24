@@ -12,7 +12,7 @@ function crearCarta(producto) {
             <p class="carta-descripcion"></p>
             <div class="carta-pie">
                 <span class="carta-precio"></span>
-                <button class="carta-boton" type="button">Ver</button>
+                <button class="carta-boton" type="button">Ver <i class="fa-solid fa-arrow-right"></i></button>
             </div>
         </div>
     `;

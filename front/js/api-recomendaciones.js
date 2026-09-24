@@ -2,12 +2,15 @@
 // Los productos se adaptan al formato de cartas y modal:
 // { id, nombre, descripcion, precio, imagen, razon, personalizado }
 
+// Imagen de relleno (los productos no traen imagen): bolsa sólida + nombre de la categoría
 function imagenDeCategoria(categoria) {
-    const icono = RECOMENDADOR.iconos[categoria] || RECOMENDADOR.iconos.General;
+    const texto = String(categoria || "Producto").replace(/[<>&"]/g, "");
     return "data:image/svg+xml;utf8," + encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">` +
-        `<rect width="400" height="300" fill="#eef3ff"/>` +
-        `<text x="200" y="150" font-size="120" text-anchor="middle" dominant-baseline="central">${icono}</text>` +
+        `<rect width="400" height="300" fill="#eef1f6"/>` +
+        `<path d="M165 110h70l-8 72h-54z" fill="#1B396A"/>` +
+        `<path d="M183 110a17 17 0 0 1 34 0" fill="none" stroke="#1B396A" stroke-width="9" stroke-linecap="round"/>` +
+        `<text x="200" y="222" font-family="Montserrat, sans-serif" font-size="20" font-weight="600" fill="#807E82" text-anchor="middle">${texto}</text>` +
         `</svg>`
     );
 }

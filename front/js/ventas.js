@@ -70,8 +70,8 @@ function crearItemCompra(compra) {
     const control = document.createElement("div");
     control.className = "cantidad-control";
     control.innerHTML = `
-        <button class="cantidad-btn" type="button" data-cambio="-1" aria-label="Quitar una unidad" ${!clienteActivo ? 'disabled' : ''}>−</button>
-        <button class="cantidad-btn" type="button" data-cambio="1" aria-label="Agregar una unidad" ${!clienteActivo ? 'disabled' : ''}>+</button>
+        <button class="cantidad-btn" type="button" data-cambio="-1" aria-label="Quitar una unidad" ${!clienteActivo ? 'disabled' : ''}><i class="fa-solid fa-minus"></i></button>
+        <button class="cantidad-btn" type="button" data-cambio="1" aria-label="Agregar una unidad" ${!clienteActivo ? 'disabled' : ''}><i class="fa-solid fa-plus"></i></button>
     `;
     control.querySelector('[data-cambio="-1"]').disabled = !clienteActivo || compra.cantidad <= 1;
     li.querySelector(".compra-subtotal").before(control);
@@ -83,7 +83,7 @@ function renderizar() {
     const validas = compras.filter((c) => buscarProducto(c.id));
 
     if (validas.length === 0) {
-        lista.innerHTML = `<li class="lista-vacia">Tu carrito está vacío.<br>${clienteActivo ? 'Escanea un código de barras para empezar.' : 'Acércate a la cámara facial para empezar.'}</li>`;
+        lista.innerHTML = `<li class="lista-vacia"><i class="fa-solid fa-basket-shopping"></i>Tu carrito está vacío.<br>${clienteActivo ? 'Escanea un código de barras para empezar.' : 'Acércate a la cámara facial para empezar.'}</li>`;
     } else {
         lista.replaceChildren(...validas.map(crearItemCompra));
     }
@@ -107,28 +107,22 @@ function renderizar() {
     if (clienteActivo) {
         if (banner) {
             banner.className = "banner-facial desbloqueado";
-            icono.textContent = "👤";
-            titulo.textContent = `Cliente Identificado: ${clienteActivo.nombre || clienteActivo.codigo}`;
+            icono.className = "fa-solid fa-user-check";
+            titulo.textContent = `Cliente identificado: ${clienteActivo.nombre || clienteActivo.codigo}`;
             subtitulo.textContent = "Desbloqueado · Escanea productos usando la cámara del celular.";
         }
         if (avisoEscanear) avisoEscanear.style.display = "flex";
-        if (resumenCliente) {
-            resumenCliente.textContent = `${clienteActivo.nombre || clienteActivo.codigo} ✅`;
-            resumenCliente.style.color = "#059669";
-        }
+        if (resumenCliente) mostrarResumenCliente(resumenCliente, clienteActivo.nombre || clienteActivo.codigo, true);
         btnPagar.disabled = (validas.length === 0);
     } else {
         if (banner) {
             banner.className = "banner-facial bloqueado";
-            icono.textContent = "🔒";
-            titulo.textContent = "Identificación Facial Requerida";
+            icono.className = "fa-solid fa-lock";
+            titulo.textContent = "Identificación facial requerida";
             subtitulo.textContent = "Acércate a la cámara de la laptop para identificarte con tu rostro.";
         }
         if (avisoEscanear) avisoEscanear.style.display = "none";
-        if (resumenCliente) {
-            resumenCliente.textContent = "Sin identificar 🔒";
-            resumenCliente.style.color = "#dc2626";
-        }
+        if (resumenCliente) mostrarResumenCliente(resumenCliente, "Sin identificar", false);
         btnPagar.disabled = true;
     }
 
@@ -136,18 +130,33 @@ function renderizar() {
     document.getElementById("btn-cancelar").disabled = cantidad === 0;
 }
 
+// "Cliente: Nombre" en el resumen, con candado o palomita
+function mostrarResumenCliente(el, texto, identificado) {
+    const i = document.createElement("i");
+    i.className = identificado ? "fa-solid fa-circle-check" : "fa-solid fa-lock";
+    el.className = `resumen-cliente ${identificado ? "desbloqueado" : "bloqueado"}`;
+    el.replaceChildren(document.createTextNode(texto), i);
+}
+
+// Texto del aviso de escanear (con su ícono)
+function mostrarAvisoEscanear(aviso, icono, texto, agregado) {
+    aviso.classList.toggle("agregado", agregado);
+    aviso.querySelector(".aviso-icono").className = `aviso-icono fa-solid fa-${icono}`;
+    aviso.querySelector(".aviso-texto").textContent = texto;
+}
+
 /* ---------- Acciones ---------- */
 function agregarProducto(id) {
     if (!clienteActivo) {
         if (typeof dialogo !== "undefined" && dialogo.mensaje) {
             dialogo.mensaje({
-                icono: "🔒",
-                titulo: "Identificación Facial Requerida",
+                icono: "lock",
+                titulo: "Identificación facial requerida",
                 texto: "Debes estar identificado frente a la cámara de la laptop antes de agregar productos al carrito.",
                 textoSi: "Entendido"
             });
         } else {
-            alert("🔒 Debes estar identificado frente a la cámara de la laptop antes de agregar productos.");
+            alert("Debes estar identificado frente a la cámara de la laptop antes de agregar productos.");
         }
         return;
     }
@@ -247,21 +256,17 @@ async function monitorearEstadoYEscaneos() {
                 agregarProducto(p.id);
                 const aviso = document.querySelector(".aviso-escanear");
                 if (aviso && clienteActivo) {
-                    aviso.innerHTML = `<span class="aviso-icono">✨</span> ¡Producto Agregado!: <strong>${p.nombre}</strong> (${formatearPrecio(p.precio)})`;
-                    aviso.style.background = "#d1fae5";
-                    aviso.style.color = "#065f46";
-                    aviso.style.border = "1px solid #a7f3d0";
+                    mostrarAvisoEscanear(aviso, "circle-check",
+                        `Producto agregado: ${p.nombre} (${formatearPrecio(p.precio)})`, true);
                     setTimeout(() => {
-                        aviso.innerHTML = `<span class="aviso-icono">📷</span> Para agregar tus compras, escanea el código de barras con la cámara`;
-                        aviso.style.background = "";
-                        aviso.style.color = "";
-                        aviso.style.border = "";
+                        mostrarAvisoEscanear(aviso, "barcode",
+                            "Para agregar tus compras, escanea el código de barras con la cámara", false);
                     }, 4000);
                 }
             } else if (esc.tipo === "no_encontrado" || esc.codigo_barras) {
                 if (typeof dialogo !== "undefined" && dialogo.mensaje) {
                     dialogo.mensaje({
-                        icono: "❌",
+                        icono: "circle-xmark",
                         titulo: "Producto no encontrado",
                         texto: `El código de barras "${esc.codigo_barras}" fue analizado pero no existe en el inventario.`,
                         textoSi: "Entendido"
@@ -306,7 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-eliminar").addEventListener("click", () => {
         const n = seleccionadas.size;
         dialogo.mensaje({
-            icono: "🗑️",
+            icono: "trash",
             titulo: `¿Eliminar ${n} ${n === 1 ? "producto" : "productos"}?`,
             texto: "Se quitarán de tu carrito.",
             textoSi: "Sí, eliminar",
@@ -317,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Pagar y registrar venta vinculada al cliente identificado
     document.getElementById("btn-pagar").addEventListener("click", () => {
         if (!clienteActivo) {
-            alert("🔒 Debes estar identificado frente a la cámara facial para realizar la compra.");
+            alert("Debes estar identificado frente a la cámara facial para realizar la compra.");
             return;
         }
 
@@ -331,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         dialogo.mensaje({
-            icono: "💳",
+            icono: "credit-card",
             titulo: "¿Confirmar compra?",
             texto: `Cliente: ${clienteActivo.nombre || clienteActivo.codigo}\nTotal: ${formatearPrecio(total)}\nSe procesará el pago y registrará en la cuenta.`,
             textoSi: "Sí, Confirmar Pago",
@@ -348,14 +353,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     vaciarCompras();
                     dialogo.mensaje({
-                        icono: "✅",
-                        titulo: "¡Pago Realizado con Éxito!",
+                        icono: "circle-check",
+                        titulo: "¡Pago realizado con éxito!",
                         texto: `Ticket #${resData.venta_id}\nCliente: ${clienteActivo.nombre || clienteActivo.codigo}\nTotal: ${formatearPrecio(total)}\n¡Gracias por tu compra!`
                     });
                 } catch (err) {
                     dialogo.mensaje({
-                        icono: "❌",
-                        titulo: "Error en el Pago",
+                        icono: "circle-xmark",
+                        titulo: "Error en el pago",
                         texto: err.message,
                         textoSi: "Entendido"
                     });
@@ -367,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Cancelar
     document.getElementById("btn-cancelar").addEventListener("click", () => {
         dialogo.mensaje({
-            icono: "⚠️",
+            icono: "triangle-exclamation",
             titulo: "¿Cancelar la compra?",
             texto: "Se vaciará todo tu carrito.",
             textoSi: "Sí, cancelar",

@@ -15,6 +15,7 @@ const TEXTO_ESTADO = {
 let personales = [];
 let generales = [];
 let clienteActivo = null;
+let clienteVistoEn = 0;                  // última vez que la cámara confirmó al cliente activo (ms)
 
 // Trabajadores (clientes.es_trabajador = 1): cuándo se les pidió la huella por última vez
 const huellaPedida = new Map();          // cliente_id del trabajador -> momento del último aviso (ms)
@@ -42,7 +43,7 @@ async function cargarGenerales() {
 
 async function cargarPersonales(clienteId) {
     limpiarRecomendaciones(el.sugerencias);
-    agregarRecomendacion(el.sugerencias, "Buscando productos para ti…", "Un momento ⏳");
+    agregarRecomendacion(el.sugerencias, "Buscando productos para ti…", "Un momento");
 
     let datos;
     try {
@@ -56,18 +57,18 @@ async function cargarPersonales(clienteId) {
 
     limpiarRecomendaciones(el.sugerencias);
     if (datos === null) {
-        agregarRecomendacion(el.sugerencias, MENSAJE_SIN_API, "Sin conexión ⚠️");
+        agregarRecomendacion(el.sugerencias, MENSAJE_SIN_API, "Sin conexión");
         return;
     }
 
     personales = datos;
     if (personales.length === 0) {
-        mostrarSaludo("¡Bienvenido! 👋", "Tus sugerencias aparecerán con tus compras");
+        mostrarSaludo("¡Bienvenido!", "Tus sugerencias aparecerán con tus compras");
         agregarRecomendacion(el.sugerencias,
             "Aún no conocemos tus gustos. Mientras tanto, mira lo más vendido de la tienda.");
         return;
     }
-    mostrarSaludo("¡Hola de nuevo! 👋", "Según tus compras anteriores");
+    mostrarSaludo("¡Hola de nuevo!", "Según tus compras anteriores");
     agregarRecomendacion(el.sugerencias, "Toca un producto para saber por qué te lo recomendamos.");
     personales.forEach((p) => agregarProductoRecomendado(el.sugerencias, p));
 }
@@ -102,7 +103,7 @@ function mostrarTrabajador(clienteId, nombre) {
     const pidiendoHuella = ahora - huellaPedida.get(clienteId) < RECOMENDADOR.avisoEmpleadoMs;
 
     el.empleadoTitulo.textContent = nombre ? `Hola, ${nombre}` : "Hola";
-    el.empleadoIcono.textContent = pidiendoHuella ? "👆" : "🧑‍💼";
+    el.empleadoIcono.className = pidiendoHuella ? "fa-solid fa-fingerprint" : "fa-solid fa-user-tie";
     el.empleadoTexto.textContent = pidiendoHuella
         ? "Eres trabajador de la tienda. Registra tu huella en el lector para marcar tu asistencia."
         : "Estás en modo trabajador: en esta pantalla no se muestran recomendaciones.";
@@ -117,14 +118,20 @@ function aplicarEstado({ estado = "idle", cliente_id: clienteId, nombre }) {
     // Solo un cliente confirmado por la cámara ve la interfaz de cliente
     if (estado === "activo" && clienteId) {
         el.espera.hidden = true;
+        clienteVistoEn = Date.now();
         if (clienteId !== clienteActivo) {
             clienteActivo = clienteId;
             cargarPersonales(clienteId);
         }
         return;
     }
-    // Si un cliente ya en pantalla deja de reconocerse un momento, se queda su interfaz
-    if (estado === "registrando" && clienteActivo !== null) return;
+    // Si el cliente en pantalla deja de verse, su interfaz se queda permanenciaClienteMs
+    // (un trabajador frente a la cámara la cierra de inmediato)
+    if (estado !== "empleado" && clienteActivo !== null &&
+        Date.now() - clienteVistoEn < RECOMENDADOR.permanenciaClienteMs) {
+        mostrarEstadoCamara("activo");
+        return;
+    }
 
     // Nadie, rostro aún sin identificar o trabajador: pantalla de espera, sin datos de clientes
     olvidarCliente();

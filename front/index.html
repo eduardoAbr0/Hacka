@@ -3,29 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda Inteligente</title>
+    <title>InteSup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- ============ Barra superior ============ -->
+    <!-- ============ Barra superior: marca centrada + estado de la cámara ============ -->
     <header class="barra-superior">
-        <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
-        <span id="nombre-negocio" class="nombre-negocio"></span>
-        <nav class="nav">
-            <a href="index.html" class="nav-link activo">Productos</a>
-            <a href="ventas.html" class="nav-link">Mi carrito</a>
-        </nav>
-        <div id="estado-camara" class="badge-camara">
-            <span class="dot-camara"></span>
-            <span id="estado-camara-texto">Conectando…</span>
+        <div class="marca">
+            <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
+            <span id="nombre-negocio" class="nombre-negocio"></span>
+        </div>
+        <div class="barra-derecha">
+            <div id="estado-camara" class="badge-camara">
+                <span class="dot-camara"></span>
+                <span id="estado-camara-texto">Conectando…</span>
+            </div>
         </div>
     </header>
 
     <!-- ============ Pantalla de espera (sin cliente frente a la cámara) ============ -->
     <div id="pantalla-espera" class="pantalla-espera">
         <div class="espera-tarjeta">
-            <div class="espera-icono">👋</div>
-            <h1 class="espera-titulo">¡Bienvenido a nuestra tienda!</h1>
+            <div class="espera-icono"><i class="fa-solid fa-hand"></i></div>
+            <h1 class="espera-titulo">Bienvenido a InteSup</h1>
             <p class="espera-subtitulo">Acércate a la cámara para ver productos recomendados para ti</p>
             <p id="espera-estado" class="espera-pulso">Buscando clientes…</p>
         </div>
@@ -35,7 +39,7 @@
          Pide la huella una vez; durante el cooldown solo muestra "modo trabajador". -->
     <div id="pantalla-empleado" class="pantalla-espera pantalla-empleado" hidden>
         <div class="espera-tarjeta">
-            <div id="empleado-icono" class="espera-icono">👆</div>
+            <div class="espera-icono"><i id="empleado-icono" class="fa-solid fa-fingerprint"></i></div>
             <h1 id="empleado-titulo" class="espera-titulo">Hola</h1>
             <p id="empleado-texto" class="espera-subtitulo"></p>
             <p id="empleado-pulso" class="espera-pulso"></p>
@@ -47,7 +51,7 @@
         <!-- Izquierda: recomendaciones personales del cliente -->
         <aside class="panel-recomendaciones">
             <div class="recomendaciones-cabecera">
-                <span class="recomendaciones-icono">✨</span>
+                <span class="recomendaciones-icono"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
                 <div>
                     <h2 id="saludo-titulo" class="recomendaciones-titulo">Sugerencias para ti</h2>
                     <p id="saludo-subtitulo" class="recomendaciones-subtitulo">Según tus compras anteriores</p>
@@ -58,7 +62,7 @@
 
         <!-- Derecha: productos más vendidos para todos -->
         <section class="panel-productos">
-            <h1 class="panel-titulo">Lo más vendido</h1>
+            <h1 class="panel-titulo"><i class="fa-solid fa-fire"></i> Lo más vendido</h1>
             <div id="contenedor-cartas" class="grid-cartas"></div>
         </section>
     </main>
@@ -67,12 +71,12 @@
     <div id="modal" class="modal" hidden>
         <div class="modal-fondo" data-cerrar></div>
         <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
-            <button class="modal-cerrar" type="button" aria-label="Cerrar" data-cerrar>&times;</button>
+            <button class="modal-cerrar" type="button" aria-label="Cerrar" data-cerrar><i class="fa-solid fa-xmark"></i></button>
             <img id="modal-imagen" class="modal-imagen" alt="">
             <div class="modal-cuerpo">
                 <h3 id="modal-titulo" class="modal-titulo"></h3>
                 <span id="modal-precio" class="modal-precio"></span>
-                <p class="modal-etiqueta">¿Por qué te lo recomendamos?</p>
+                <p class="modal-etiqueta"><i class="fa-solid fa-circle-info"></i> ¿Por qué te lo recomendamos?</p>
                 <p id="modal-razon" class="modal-razon"></p>
             </div>
         </div>

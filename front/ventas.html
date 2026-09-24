@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi carrito</title>
+    <title>Mi carrito · InteSup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/ventas.css">
 </head>
 <body>
-    <!-- Barra superior con logo y nombre del negocio -->
+    <!-- Barra superior: marca centrada + navegación a la derecha -->
     <header class="barra-superior">
-        <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
-        <span id="nombre-negocio" class="nombre-negocio"></span>
+        <div class="marca">
+            <img id="logo-negocio" class="logo" src="img/logo.svg" alt="Logo">
+            <span id="nombre-negocio" class="nombre-negocio"></span>
+        </div>
         <nav class="nav">
-            <a href="index.html" class="nav-link">Productos</a>
-            <a href="ventas.html" class="nav-link activo">Mi carrito</a>
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-store"></i> Productos</a>
+            <a href="ventas.html" class="nav-link activo"><i class="fa-solid fa-cart-shopping"></i> Mi carrito</a>
         </nav>
     </header>
 
@@ -22,48 +28,48 @@
         <!-- Izquierda: lista de compras con scroll + botones -->
         <section class="ventas-panel">
             <div class="ventas-cabecera">
-                <h1 class="ventas-titulo">Mi carrito</h1>
+                <h1 class="ventas-titulo"><i class="fa-solid fa-cart-shopping"></i> Mi carrito</h1>
                 <span id="conteo-productos" class="ventas-conteo"></span>
             </div>
 
             <!-- Banner de Autenticación Facial -->
             <div id="banner-facial" class="banner-facial bloqueado">
-                <div id="facial-icono" class="facial-icono">🔒</div>
+                <div class="facial-icono"><i id="facial-icono" class="fa-solid fa-lock"></i></div>
                 <div class="facial-info">
-                    <strong id="facial-titulo">Identificación Facial Requerida</strong>
+                    <strong id="facial-titulo">Identificación facial requerida</strong>
                     <span id="facial-subtitulo">Acércate a la cámara de la laptop para identificarte con tu rostro.</span>
                 </div>
             </div>
 
             <p id="aviso-escanear" class="aviso-escanear" style="display: none;">
-                <span class="aviso-icono">📱</span>
-                Escanea el código de barras de tus productos usando la cámara de tu celular.
+                <i class="aviso-icono fa-solid fa-barcode"></i>
+                <span class="aviso-texto">Escanea el código de barras de tus productos usando la cámara de tu celular.</span>
             </p>
 
             <ul id="lista-compras" class="lista-compras"></ul>
 
             <div class="ventas-acciones">
-                <button id="btn-eliminar" class="btn btn-peligro" type="button" disabled>Vaciar Carrito</button>
+                <button id="btn-eliminar" class="btn btn-peligro" type="button" disabled><i class="fa-solid fa-trash"></i> Vaciar carrito</button>
             </div>
         </section>
 
         <!-- Derecha: total y pago -->
         <aside class="resumen">
-            <h2 class="resumen-titulo">Resumen de Compra</h2>
-            <div class="resumen-fila" style="padding-bottom: 8px; border-bottom: 1px solid var(--borde);">
-                <span>Cliente Activo:</span>
-                <span id="resumen-cliente" style="font-weight: 800; color: #dc2626;">Sin identificar 🔒</span>
+            <h2 class="resumen-titulo">Resumen de compra</h2>
+            <div class="resumen-fila resumen-fila-cliente">
+                <span>Cliente</span>
+                <span id="resumen-cliente" class="resumen-cliente bloqueado"></span>
             </div>
             <div class="resumen-fila">
                 <span>Productos</span>
                 <span id="resumen-cantidad">0</span>
             </div>
             <div class="resumen-total">
-                <span class="resumen-total-etiqueta">Total a Pagar</span>
+                <span class="resumen-total-etiqueta">Total a pagar</span>
                 <span id="resumen-total" class="resumen-total-valor">$0.00</span>
             </div>
-            <button id="btn-pagar" class="btn btn-pagar" type="button" disabled>Confirmar Pago</button>
-            <button id="btn-cancelar" class="btn btn-cancelar" type="button" disabled>Cancelar</button>
+            <button id="btn-pagar" class="btn btn-pagar" type="button" disabled><i class="fa-solid fa-credit-card"></i> Confirmar pago</button>
+            <button id="btn-cancelar" class="btn btn-cancelar" type="button" disabled><i class="fa-solid fa-xmark"></i> Cancelar</button>
         </aside>
     </main>
 
